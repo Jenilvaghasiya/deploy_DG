@@ -1,0 +1,35 @@
+{
+  "kind": "singleType",
+  "collectionName": "about_uses",
+  "info": {
+    "singularName": "about-us",
+    "pluralName": "about-uses",
+    "displayName": "About Us"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "card": {
+      "type": "component",
+      "component": "about-us.cards",
+      "repeatable": true
+    },
+    "bodySection": {
+      "type": "component",
+      "component": "about-us.body-section1",
+      "repeatable": false
+    },
+    "foundersSections": {
+      "type": "component",
+      "component": "about-us.founder-section",
+      "repeatable": false
+    },
+    "feedbackSections": {
+      "type": "component",
+      "component": "about-us.feedback-sections",
+      "repeatable": false
+    }
+  }
+}

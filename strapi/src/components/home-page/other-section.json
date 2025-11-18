@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_home_page_other_sections",
+  "info": {
+    "displayName": "OtherSection"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "content": {
+      "type": "richtext"
+    }
+  },
+  "config": {}
+}

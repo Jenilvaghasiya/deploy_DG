@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_pricing_plans",
+  "info": {
+    "displayName": "plans",
+    "icon": "priceTag"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "price": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "feature": {
+      "type": "component",
+      "component": "plan-feature.features",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}

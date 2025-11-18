@@ -1,0 +1,28 @@
+{
+  "kind": "singleType",
+  "collectionName": "pricings",
+  "info": {
+    "singularName": "pricing",
+    "pluralName": "pricings",
+    "displayName": "Pricing"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "description": {
+      "type": "richtext"
+    },
+    "Plan": {
+      "type": "component",
+      "component": "pricing.plans",
+      "repeatable": true
+    },
+    "currentSubscription": {
+      "type": "component",
+      "component": "pricing.feature-item",
+      "repeatable": false
+    }
+  }
+}

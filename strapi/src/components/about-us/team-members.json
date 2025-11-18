@@ -1,0 +1,32 @@
+{
+  "collectionName": "components_about_us_team_members",
+  "info": {
+    "displayName": "teamMembers"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "position": {
+      "type": "string"
+    },
+    "bio": {
+      "type": "blocks"
+    },
+    "photo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "linkedin": {
+      "type": "string"
+    }
+  },
+  "config": {}
+}

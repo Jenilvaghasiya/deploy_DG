@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_about_us_cards",
+  "info": {
+    "displayName": "cards"
+  },
+  "options": {},
+  "attributes": {
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "content": {
+      "type": "richtext"
+    },
+    "title": {
+      "type": "richtext"
+    }
+  },
+  "config": {}
+}

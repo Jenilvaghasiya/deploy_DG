@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_about_us_founder_sections",
+  "info": {
+    "displayName": "founderSection"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "buttonLink": {
+      "type": "string"
+    },
+    "content": {
+      "type": "component",
+      "component": "about-us.content",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}

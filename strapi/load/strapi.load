@@ -1,0 +1,11 @@
+LOAD DATABASE
+     FROM sqlite:///mnt/d/Dhananjay/Full%20Stack/Design%20Genie/Design%20Genie%20Benjamin%20Repo%20Push/strapi/.tmp/data.db
+     INTO postgresql://designgenie%40dgpgasia:password123@dgpgasia.postgres.database.azure.com:5432/postgres?sslmode=require
+
+ WITH drop, create tables, create indexes, reset sequences
+
+ SET work_mem to '16MB',
+     maintenance_work_mem to '512MB'
+
+ CAST type datetime to timestamptz
+     drop default drop not null;

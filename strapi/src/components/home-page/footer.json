@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_home_page_footers",
+  "info": {
+    "displayName": "footer"
+  },
+  "options": {},
+  "attributes": {
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "email"
+    },
+    "links": {
+      "type": "component",
+      "component": "footer.social-links",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}

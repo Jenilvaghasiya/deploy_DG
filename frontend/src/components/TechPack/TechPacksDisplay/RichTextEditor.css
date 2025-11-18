@@ -1,0 +1,131 @@
+/* RichTextEditor.css */
+.rich-text-editor-container {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rich-text-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  flex-wrap: wrap;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.toolbar-btn.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 0.25rem;
+}
+
+.rich-text-editor {
+  min-height: 150px;
+  padding: 0.75rem;
+  color: white;
+  font-size: 14px;
+  line-height: 1.6;
+  outline: none;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.rich-text-editor:empty:before {
+  content: attr(data-placeholder);
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  position: absolute;
+}
+
+.rich-text-editor strong,
+.rich-text-editor b {
+  font-weight: bold;
+}
+
+.rich-text-editor em,
+.rich-text-editor i {
+  font-style: italic;
+}
+
+.rich-text-editor u {
+  text-decoration: underline;
+}
+
+.rich-text-editor ul,
+.rich-text-editor ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.rich-text-editor ul {
+  list-style-type: disc;
+}
+
+.rich-text-editor ol {
+  list-style-type: decimal;
+}
+
+.rich-text-editor li {
+  margin: 0.25rem 0;
+}
+
+.rich-text-editor p {
+  margin: 0.5rem 0;
+}
+
+.rich-text-editor p:first-child {
+  margin-top: 0;
+}
+
+.rich-text-editor p:last-child {
+  margin-bottom: 0;
+}
+
+/* Scrollbar styling */
+.rich-text-editor::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rich-text-editor::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.rich-text-editor::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.rich-text-editor::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

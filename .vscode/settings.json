@@ -1,0 +1,13 @@
+// STRAPI DEPLOY
+// {
+//     "appService.showBuildDuringDeployPrompt": false,
+//     "appService.defaultWebAppToDeploy": "subscriptions/c92108ca-d5f1-49fc-a609-0a9a51b83384/resourceGroups/DesginGenie/providers/Microsoft.Web/sites/dgstrapi",
+//     "appService.deploySubpath": "strapi"
+// }
+
+// BACKEND DEPLOY
+{
+    "appService.showBuildDuringDeployPrompt": false,
+    "appService.defaultWebAppToDeploy": "/subscriptions/c92108ca-d5f1-49fc-a609-0a9a51b83384/resourceGroups/DesginGenie/providers/Microsoft.Web/sites/DesignGenie",
+    "appService.deploySubpath": "backend"
+}

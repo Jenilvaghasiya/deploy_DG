@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "howworks",
+  "info": {
+    "singularName": "howwork",
+    "pluralName": "howworks",
+    "displayName": "HowItwork"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Title": {
+      "type": "text"
+    },
+    "Description": {
+      "type": "richtext"
+    },
+    "Category": {
+      "type": "enumeration",
+      "enum": [
+        "Getting Started",
+        "Features",
+        " Advanced Tips"
+      ]
+    },
+    "Steps": {
+      "type": "component",
+      "component": "howitworks.steps",
+      "repeatable": true
+    },
+    "isActive": {
+      "type": "boolean"
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "Title"
+    },
+    "Order": {
+      "type": "integer"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "kind": "collectionType",
+  "collectionName": "feedbacks",
+  "info": {
+    "singularName": "feedback",
+    "pluralName": "feedbacks",
+    "displayName": "Feedback"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "tenant": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "email"
+    },
+    "user_signup_date": {
+      "type": "string"
+    },
+    "credits_used_till_now": {
+      "type": "integer"
+    },
+    "size_charts_created_till_now": {
+      "type": "integer"
+    },
+    "feedback_date": {
+      "type": "string"
+    },
+    "improvement": {
+      "type": "text"
+    },
+    "liked_about_app": {
+      "type": "text"
+    },
+    "price_option": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "kind": "collectionType",
+  "collectionName": "dg_posts",
+  "info": {
+    "singularName": "dg-post",
+    "pluralName": "dg-posts",
+    "displayName": "dg-post"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "comment": {
+      "type": "text"
+    },
+    "postStatus": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ]
+    },
+    "externalUserId": {
+      "type": "string"
+    },
+    "nicknameSnapshot": {
+      "type": "string"
+    },
+    "reportedByUserIds": {
+      "type": "json"
+    },
+    "reportReasons": {
+      "type": "json"
+    },
+    "adminComments": {
+      "type": "string"
+    },
+    "isDeleted": {
+      "type": "boolean"
+    },
+    "image": {
+      "type": "string"
+    }
+  }
+}

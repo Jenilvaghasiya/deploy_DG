@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_home_page_feature_main_contents",
+  "info": {
+    "displayName": "featureMainContent"
+  },
+  "options": {},
+  "attributes": {
+    "Title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    }
+  },
+  "config": {}
+}

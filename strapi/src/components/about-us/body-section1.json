@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_about_us_body_section1s",
+  "info": {
+    "displayName": "bodySection1"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "title2": {
+      "type": "string"
+    }
+  },
+  "config": {}
+}

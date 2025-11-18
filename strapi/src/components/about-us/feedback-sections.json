@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_about_us_feedback_sections",
+  "info": {
+    "displayName": "feedbackSections"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "text"
+    },
+    "buttonLink": {
+      "type": "string"
+    }
+  },
+  "config": {}
+}

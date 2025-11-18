@@ -1,0 +1,681 @@
+import { useState, useEffect, useRef } from "react";
+import { SlCalender } from "react-icons/sl";
+import toast, { Toaster } from "react-hot-toast";
+import {ConfirmationModal} from '../Modals/ConfirmationModal'
+import { MdOutlineOpenInNew } from "react-icons/md";
+import axios from "axios";
+import DateRangePicker from "../Modals/DatePicker";
+
+
+type SocialPost = {
+  _id: string;
+  url: string;
+  title: string;
+  description: string;
+  status: string;
+  tenant_id: string;
+  user_id: {
+    nick_name: string;
+    id: string;
+  };
+  likes: string[];
+  dislikes: string[];
+  comments: any[];
+  created_at: string;
+  updated_at: string;
+};
+
+
+const PostsTab = () => {
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<SocialPost | null>(null);
+  const [creditToAdd, setCreditToAdd] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
+  const popoverRef = useRef(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [actionToConfirm, setActionToConfirm] = useState<() => void | null>(null);
+  const datePickerRef = useRef<HTMLDivElement | null>(null);
+const [loadingPostId, setLoadingPostId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [search, page, limit, message]);
+
+  const fetchPosts = async () => {
+    setLoadingPosts(true);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        search : search
+      });
+      const res = await fetch(
+        `${process.env.STRAPI_ADMIN_NODE_BACKEND_URL}/api/v1/strapi-admin/social-posts?${params.toString()}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-node-auth-token": `${process.env.STRAPI_ADMIN_NODE_AUTH_TOKEN}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Error fetching users");
+      const { data, meta } = await res.json();
+      
+      console.log(data, "res");
+      setPosts(data);
+      setTotalPages(meta.totalPages);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setSelectedUser(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+
+  const handleFilterwiseDate = async () => {
+    setLoadingPosts(true);
+    try {
+      const params = new URLSearchParams({
+        search,
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      // startDate / endDate are ISO strings like "2025-07-21T00:00:00.000Z"
+      if (startDate) params.append("startDate", startDate); // "YYYY-MM-DD"
+      if (endDate) params.append("endDate", endDate);   // "YYYY-MM-DD"
+
+      const res = await fetch(
+        `${process.env.STRAPI_ADMIN_NODE_BACKEND_URL}/api/v1/strapi-admin/social-posts?${params.toString()}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-node-auth-token": `${process.env.STRAPI_ADMIN_NODE_AUTH_TOKEN}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Error fetching users");
+      const { data, meta } = await res.json();
+
+      setPosts(data);
+      setTotalPages(meta.totalPages);
+      setShowDatePicker(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const handleCansel = async () => {
+    setStartDate(null);
+    setEndDate(null);
+    fetchPosts()
+    setShowDatePicker(false)
+  }
+
+const handleApprove = async (postId: string, user_id:  string) => {
+  try {
+    setLoadingPostId(postId);
+    const res = await fetch(`${process.env.STRAPI_ADMIN_NODE_BACKEND_URL}/api/v1/strapi-admin/social-posts/approve/${user_id}/${postId}`,
+      {
+          headers: {
+            "Content-Type": "application/json",
+            "x-node-auth-token": `${process.env.STRAPI_ADMIN_NODE_AUTH_TOKEN}`,
+          },
+        }
+    )
+    if (!res.ok) throw new Error("Failed to approve post");
+
+    setMessage("Post approved successfully");
+    fetchPosts(); // Refresh the posts list
+  } catch (err) {
+    console.error(err);
+    setMessage("Error approving post");
+  }finally {
+    setLoadingPostId(null); // stop loading
+  }
+};
+
+const handleReject = async (postId: string, user_id: string) => {
+  try {
+    setLoadingPostId(postId);
+    const res = await fetch(`${process.env.STRAPI_ADMIN_NODE_BACKEND_URL}/api/v1/strapi-admin/social-posts/reject/${user_id}/${postId}`,
+      {
+          headers: {
+            "Content-Type": "application/json",
+            "x-node-auth-token": `${process.env.STRAPI_ADMIN_NODE_AUTH_TOKEN}`,
+          },
+        }
+    )    
+    if (!res.ok) throw new Error("Failed to reject post");
+    setMessage("Post rejected successfully");
+  } catch (err) {
+    console.error(err);
+    setMessage("Error rejecting post");
+  }finally {
+    setLoadingPostId(null); // stop loading
+  }
+};
+
+const openConfirmation = (message: string, action: () => void) => {
+  setModalMessage(message);
+  setActionToConfirm(() => action);
+  setModalOpen(true);
+};
+
+const handleDelete = async (postId: string, user_id: string) => {
+  try {
+    setLoadingPostId(postId);
+    const res = await axios.delete(`${process.env.STRAPI_ADMIN_NODE_BACKEND_URL}/api/v1/strapi-admin/social-posts/delete/${user_id}/${postId}`,
+      {
+          headers: {
+            "Content-Type": "application/json",
+            "x-node-auth-token": `${process.env.STRAPI_ADMIN_NODE_AUTH_TOKEN}`,
+          },
+        }
+    )    
+    
+    if (res.status !== 200) throw new Error("Failed to reject post");
+    setMessage("Post deleted successfully");
+  } catch (err) {
+    console.error(err);
+    setMessage("Error deleting post");
+  }finally {
+    setLoadingPostId(null); // stop loading
+  }
+};
+
+
+  const handleCancel = async () => {
+    setStartDate(null);
+    setEndDate(null);
+    fetchPosts()
+    setShowDatePicker(false)
+  }
+
+  const strapiStyles = {
+    container: {
+      fontFamily:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+      backgroundColor: "#181826",
+      color : "#f5f5f5",
+      minHeight: "100vh",
+      padding: "2rem",
+    },
+    contentBox: {
+      borderRadius: "4px",
+      color : "#f5f5f5",
+      boxShadow: "0 2px 4px 0 rgba(227, 233, 243, 0.5)",
+      width: "100%",
+      maxWidth: "100%",
+      margin: "0 auto",
+      overflow: "hidden",
+    },
+    header: {
+      padding: "2rem 2rem 1rem 2rem",
+      borderBottom: "1px solid #f0f0ff",
+    },
+    title: {
+      fontSize: "3rem", // 1.5x of 2rem
+      fontWeight: "600",
+      color: "#f5f5f5",
+      margin: "0 0 0.5rem 0",
+    },
+    searchSection: {
+      padding: "1rem 2rem",
+      borderBottom: "1px solid #f0f0ff",
+    },
+    searchInput: {
+      width: "100%",
+      padding: "0.75rem 1rem",
+      border: "1px solid #dcdce4",
+      borderRadius: "4px",
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+      color: "#f5f5f5",
+      // backgroundColor: "#ffffff",
+      outline: "none",
+      transition: "border-color 0.2s ease",
+    },
+    tableContainer: {
+      padding: "0",
+    },
+    table: {
+      width: "100%",
+      borderCollapse: "collapse",
+      minHeight: "300px",
+    },
+    tableHeader: {
+      // backgroundColor: "#f6f6f9",
+      borderBottom: "1px solid #eaeaef",
+    },
+    th: {
+      padding: "1rem 2rem",
+      textAlign: "center",
+      fontSize: "1.125rem", // 1.5x of 0.75rem
+      fontWeight: "600",
+      color: "#f5f5f5",
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+    },
+    tr: {
+      borderBottom: "1px solid #f0f0ff",
+      transition: "background-color 0.15s ease",
+    },
+    trSelected: {
+      backgroundColor: "#neutral100",
+    },
+    td: {
+      padding: "1rem 2rem",
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+      color: "#f5f5f5",
+      textAlign: "center",
+      justifyContent: "center",
+    },
+    creditsBadge: {
+      display: "inline-block",
+      padding: "0.25rem 0.75rem",
+      borderRadius: "12px",
+      fontSize: "1.125rem", // 1.5x of 0.75rem
+      fontWeight: "600",
+      backgroundColor: "#neutral100",
+      color: "#f5f5f5",
+      border: "1px solid #bae6fd",
+    },
+    emptyState: {
+      textAlign: "center",
+      color: "#f5f5f5",
+      padding: "3rem 2rem",
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+      minHeight: "250px",
+    },
+    pagination: {
+      backgroundColor: "#neutral100",
+      padding: "1rem 2rem",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      borderTop: "1px solid #f0f0ff",
+    },
+    paginationButton: {
+      padding: "0.5rem 1rem",
+      border: "1px solid #dcdce4",
+      borderRadius: "4px",
+      backgroundColor: "#ffffff",
+      color: "#000000",
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+    },
+    paginationButtonDisabled: {
+      opacity: 0.5,
+      cursor: "not-allowed",
+      color: "#000000"
+    },
+    pageInfo: {
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+      color: "#f5f5f5",
+    },
+    formContainer: {
+      marginTop: "2rem",
+      padding: "2rem",
+      backgroundColor: "#f6f6f9",
+      borderRadius: "4px",
+      border: "1px solid #eaeaef",
+    },
+    formTitle: {
+      fontSize: "1.875rem", // 1.5x of 1.25rem
+      fontWeight: "600",
+      color: "#f5f5f5",
+      margin: "0 0 1.5rem 0",
+    },
+    formGroup: {
+      marginBottom: "1.5rem",
+    },
+    label: {
+      display: "block",
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+      fontWeight: "500",
+      color: "#f5f5f5",
+      marginBottom: "0.5rem",
+    },
+    numberInput: {
+      padding: "0.75rem 1rem",
+      border: "1px solid #dcdce4",
+      borderRadius: "4px",
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+      color: "#32324d",
+      backgroundColor: "#ffffff",
+      outline: "none",
+      width: "120px",
+      marginLeft: "8px",
+    },
+    buttonGroup: {
+      display: "flex",
+      gap: "0.75rem",
+    },
+    primaryButton: {
+      padding: "0.75rem 1.5rem",
+      backgroundColor: "#4945ff",
+      color: "#ffffff",
+      border: "none",
+      borderRadius: "4px",
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+      fontWeight: "600",
+      cursor: "pointer",
+      transition: "background-color 0.2s ease",
+    },
+    primaryButtonDisabled: {
+      backgroundColor: "#9797b3",
+      cursor: "not-allowed",
+    },
+    secondaryButton: {
+      padding: "0.75rem 1.5rem",
+      backgroundColor: "transparent",
+      color: "#32324d",
+      border: "1px solid #dcdce4",
+      borderRadius: "4px",
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+      fontWeight: "600",
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+    },
+    message: {
+      marginTop: "1rem",
+      padding: "0.75rem 1rem",
+      borderRadius: "4px",
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+    },
+    successMessage: {
+      backgroundColor: "#f0fdf4",
+      color: "#166534",
+      border: "1px solid #bbf7d0",
+      fontSize: "1.3125rem",
+    },
+    errorMessage: {
+      backgroundColor: "#fef2f2",
+      color: "#dc2626",
+      border: "1px solid #fecaca",
+      fontSize: "1.3125rem",
+    },
+    loadingText: {
+      textAlign: "center",
+      color: "#666687",
+      padding: "2rem",
+      fontSize: "1.3125rem", // 1.5x of 0.875rem
+    },
+  };
+
+  return (
+    <div style={strapiStyles.container}>
+      {/* message notification */}
+      {message && (
+        <div
+          style={{
+            ...strapiStyles.message,
+            ...(message?.includes("Successfully")
+              ? strapiStyles.successMessage
+              : strapiStyles.errorMessage),
+            marginBottom: "1.5rem",
+            position: "relative",
+          }}
+        >
+          {message}
+          <button
+            onClick={() => setMessage(null)}
+            style={{
+              position: "absolute",
+              top: "8px",
+              right: "12px",
+              background: "transparent",
+              border: "none",
+              fontWeight: "bold",
+              color: "inherit",
+              fontSize: "1rem",
+              cursor: "pointer",
+            }}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <div style={strapiStyles.contentBox}>
+        {/* Header */}
+        <div style={strapiStyles.header}>
+          <h2 style={strapiStyles.title}>Posts</h2>
+        </div>
+
+        {/* Search */}
+        <div style={strapiStyles.searchSection}>
+          <input
+            type="text"
+            placeholder="Search posts by title, user nickname..."
+            aria-label="Search..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            style={{
+              ...strapiStyles.searchInput,
+              ...(search ? { borderColor: "#4945ff" } : {}),
+            }}
+          />
+        </div>
+
+        {/* Users Table */}
+        <div style={strapiStyles.tableContainer}>
+          {loadingPosts ? (
+            <p style={strapiStyles.loadingText}>Loading posts...</p>
+          ) : (
+            <table style={strapiStyles.table}>
+              <thead style={strapiStyles.tableHeader}>
+                <tr>
+                    <th style={strapiStyles.th}>User ID</th>
+                    <th style={strapiStyles.th}>User name</th>
+                    <th style={strapiStyles.th}>Post</th>
+                    <th style={strapiStyles.th}>Title</th>
+                    <th
+                        style={{ ...strapiStyles.th, cursor: "pointer", position: "relative", display: "flex", gap: "0.5rem", justifyContent: "center", alignItems: "center" }}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDatePicker((prev) => !prev);
+                        }}
+                        style={{ marginLeft: "8px"}}
+                      >
+                        Created Date 📅
+                      </button>
+                      {showDatePicker && (
+                        <DateRangePicker
+                          startDate={startDate}
+                          endDate={endDate}
+                          onStartDateChange={setStartDate}
+                          onEndDateChange={setEndDate}
+                          onApply={handleFilterwiseDate}
+                          onCancel={handleCansel}
+                        />
+                      )}
+                    </th>
+                    <th style={strapiStyles.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {posts.map((post) => (
+                    <tr key={post._id} style={strapiStyles.tr}>
+                        <td style={strapiStyles.td}>
+                          {post.user_id?.id || "Unknown"}
+                        </td>
+                        <td style={strapiStyles.td}>
+                          {post.user_id?.nick_name || "Unknown"}
+                        </td>
+                        <td style={strapiStyles.td}>
+                          {post.url ? (
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
+                              <button
+                                onClick={() => window.open(post.url, "_blank")}
+                                style={{
+                                  padding: "6px 12px",
+                                  fontSize: "1.2rem",
+                                  borderRadius: "4px",
+                                  background: "#1e40af",
+                                  color: "#fff",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.3rem",
+                                }}
+                              >
+                                <MdOutlineOpenInNew size={16} /><span>View Image</span>
+                              </button>
+                            </div>
+                          ) : (
+                            "No Image"
+                          )}
+                        </td>
+                    <td style={strapiStyles.td}>{post.title}</td>
+                    <td style={strapiStyles.td}>
+                        {new Date(post.created_at).toLocaleDateString()}
+                    </td>
+                    <td style={{...strapiStyles.td, display: "flex", justifyContent: "center", alignItems: "center"}}>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <button
+                          onClick={() =>
+                            openConfirmation(
+                              "Are you sure you want to approve this post?",
+                              () => handleApprove(post._id, post.user_id.id)
+                            )
+                          }
+                          disabled={loadingPostId === post._id}
+                          style={{
+                            padding: "6px 12px",
+                            border: "1px solid #22c55e",
+                            borderRadius: "6px",
+                            background: loadingPostId === post._id ? "#22c55e80" : "#16a34a",
+                            color: "white",
+                            cursor: loadingPostId === post._id ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          {loadingPostId === post._id ? "Approving..." : "Approve"}
+                        </button>
+                        <button
+                          onClick={() =>
+                            openConfirmation("Are you sure you want to reject this post?", () => handleReject(post._id, post.user_id.id))
+                          }
+                          disabled={loadingPostId === post._id}
+                          style={{
+                            padding: "6px 12px",
+                            border: "1px solid #ef4444",
+                            borderRadius: "6px",
+                            background: loadingPostId === post._id ? "#ef444480" : "#dc2626",
+                            color: "white",
+                            cursor: loadingPostId === post._id ? "not-allowed" : "pointer",
+                          }}
+                        >
+                            {loadingPostId === post._id ? "Rejecting..." : "Reject"}
+                        </button>
+                        <button
+                          onClick={() =>
+                              openConfirmation("Are you sure you want to delete this post?", () => handleDelete(post._id, post.user_id.id))
+                            }
+                              disabled={loadingPostId === post._id}                          
+                          style={{
+                            padding: "6px 12px",
+                            border: "1px solid #ef4444",
+                            borderRadius: "6px",
+                            background: loadingPostId === post._id ? "#ef444480" : "#dc2626",
+                            color: "white",
+                            cursor: loadingPostId === post._id ? "not-allowed" : "pointer",
+                          }}
+                        >
+                       {loadingPostId === post._id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {posts.length === 0 && (
+                    <tr>
+                      <td colSpan={5} style={strapiStyles.emptyState}>
+                          No posts found.
+                      </td>
+                    </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Pagination */}
+        <div style={strapiStyles.pagination}>
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            style={{
+              ...strapiStyles.paginationButton,
+              ...(page === 1 ? strapiStyles.paginationButtonDisabled : {}),
+            }}
+          >
+            Previous
+          </button>
+
+          <span style={strapiStyles.pageInfo}>
+            Page {page} of {totalPages}
+          </span>
+
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            style={{
+              ...strapiStyles.paginationButton,
+              ...(page === totalPages ? strapiStyles.paginationButtonDisabled : {}),
+            }}
+          >
+            Next
+          </button>
+        </div>
+        <ConfirmationModal
+          isOpen={modalOpen}
+          message={modalMessage}
+          onConfirm={() => {
+            actionToConfirm?.();
+            setModalOpen(false);
+          }}
+          onCancel={() => setModalOpen(false)}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default PostsTab;

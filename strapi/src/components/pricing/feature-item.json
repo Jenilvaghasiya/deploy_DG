@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_pricing_feature_items",
+  "info": {
+    "displayName": "FeatureItem"
+  },
+  "options": {},
+  "attributes": {
+    "planName": {
+      "type": "string"
+    },
+    "planStatus": {
+      "type": "boolean"
+    },
+    "RenewsOn": {
+      "type": "date"
+    }
+  },
+  "config": {}
+}

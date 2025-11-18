@@ -1,0 +1,51 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Strapi build & temp files
+.build/
+.cache/
+dist/
+.tmp/
+.env
+.env.*
+config/env/**/plugins.js
+config/env/**/middlewares.js
+
+# Database (SQLite or local dev DBs)
+*.db
+*.sqlite
+
+# IDEs and editors
+.vscode/
+.idea/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Dependency directories
+.next/
+out/
+
+# Optional: ignore uploads (if stored locally)
+public/uploads/
+
+# Optional: ignore export or backup
+export/
+backups/
+
+# Strapi Admin build (if built)
+admin/build/
+
+# Ignore coverage if using tests
+coverage/
+
+# Optional: private files
+secrets/

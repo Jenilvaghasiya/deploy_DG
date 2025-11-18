@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_howitworks_steps",
+  "info": {
+    "displayName": "Steps"
+  },
+  "options": {},
+  "attributes": {
+    "StepTitle": {
+      "type": "text"
+    },
+    "StepDescription": {
+      "type": "richtext"
+    },
+    "StepNumber": {
+      "type": "integer"
+    },
+    "videoURL": {
+      "type": "text"
+    }
+  },
+  "config": {}
+}
