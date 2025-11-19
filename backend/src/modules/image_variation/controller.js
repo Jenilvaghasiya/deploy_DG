@@ -26,7 +26,7 @@ import templateChartSchema from "./templateChartSchema.js";
 import { getImageStream } from "../../utils/getImageStream.js";
 import { deductCredits } from "../../utils/creditUtils.js";
 import ResourceAccessService from "../share/ResourceAccessService.js";
-import { Cutout } from "./cutout.js";
+import { Cutout } from "./Cutout.js";
 import { ColorAnalysis } from "./ColorAnalysis.js";
 import { TechPack } from "./TechPackSchema.js";
 import { Note } from "./NoteSchema.js";
