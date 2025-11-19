@@ -12,8 +12,8 @@ import fs from "fs";
 import fspromise from "fs/promises";
 import * as galleryService from "../gallery/service.js";
 import sharp from "sharp";
-import User from "../users/model.js"; 
-import crypto from "crypto"; 
+import User from "../users/model.js";
+import crypto from "crypto";
 import UserCredits from '../credits/model.js'
 import UsageLog from '../dashboard/model.js'
 import { generateFileHash } from "../../utils/otherUtils.js";
@@ -26,7 +26,7 @@ import templateChartSchema from "./templateChartSchema.js";
 import { getImageStream } from "../../utils/getImageStream.js";
 import { deductCredits } from "../../utils/creditUtils.js";
 import ResourceAccessService from "../share/ResourceAccessService.js";
-import { Cutout } from "./CutOut.js";
+import { Cutout } from "./Cutout.js";
 import { ColorAnalysis } from "./ColorAnalysis.js";
 import { TechPack } from "./TechPackSchema.js";
 import { Note } from "./NoteSchema.js";
@@ -45,18 +45,18 @@ const TASK_TYPE = {
 // controllers/imageVariation.controller.js - ADD THESE FUNCTIONS
 
 import { BOMItemHistory } from "./BOMItemHistory.js";
-import { 
-  generateFileUrl, 
-  getFileCategory, 
+import {
+  generateFileUrl,
+  getFileCategory,
   deleteFileFromStorage,
-  getFileMetadata 
+  getFileMetadata
 } from "./techPackFileMiddleware.js";
 
 // Upload single file to tech pack
 export const uploadTechPackFile = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check if file was uploaded
     if (!req.file) {
       return sendResponse(res, {
@@ -75,7 +75,7 @@ export const uploadTechPackFile = asyncHandler(async (req, res) => {
     if (!techPack) {
       // Delete uploaded file since tech pack not found
       await deleteFileFromStorage(req.file.path);
-      
+
       return sendResponse(res, {
         statusCode: 404,
         message: "Tech Pack not found",
@@ -84,10 +84,10 @@ export const uploadTechPackFile = asyncHandler(async (req, res) => {
 
     // Generate file URL
     const fileUrl = generateFileUrl(req.file.path, process.env.BASE_URL);
-    
+
     // Get file category
     const fileCategory = getFileCategory(req.file.mimetype);
-    
+
     // Prepare file data
     const fileData = {
       file_url: fileUrl,
@@ -105,7 +105,7 @@ export const uploadTechPackFile = asyncHandler(async (req, res) => {
     if (!techPack.uploaded_files) {
       techPack.uploaded_files = [];
     }
-    
+
     // Add file to tech pack
     techPack.uploaded_files.push(fileData);
     await techPack.save();
@@ -116,7 +116,7 @@ export const uploadTechPackFile = asyncHandler(async (req, res) => {
     sendResponse(res, {
       statusCode: 200,
       message: "File uploaded successfully",
-      data: { 
+      data: {
         file: {
           _id: techPack.uploaded_files[techPack.uploaded_files.length - 1]._id,
           file_url: fileData.file_url,
@@ -130,12 +130,12 @@ export const uploadTechPackFile = asyncHandler(async (req, res) => {
     });
   } catch (err) {
     console.error("[TechPack] Error uploading file:", err);
-    
+
     // Clean up uploaded file if database save fails
     if (req.file && req.file.path) {
       await deleteFileFromStorage(req.file.path);
     }
-    
+
     sendResponse(res, {
       statusCode: 500,
       message: err.message || "Failed to upload file",
@@ -147,7 +147,7 @@ export const uploadTechPackFile = asyncHandler(async (req, res) => {
 export const uploadMultipleTechPackFiles = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check if files were uploaded
     if (!req.files || req.files.length === 0) {
       return sendResponse(res, {
@@ -168,7 +168,7 @@ export const uploadMultipleTechPackFiles = asyncHandler(async (req, res) => {
       for (const file of req.files) {
         await deleteFileFromStorage(file.path);
       }
-      
+
       return sendResponse(res, {
         statusCode: 404,
         message: "Tech Pack not found",
@@ -185,7 +185,7 @@ export const uploadMultipleTechPackFiles = asyncHandler(async (req, res) => {
     for (const file of req.files) {
       const fileUrl = generateFileUrl(file.path, process.env.BASE_URL);
       const fileCategory = getFileCategory(file.mimetype);
-      
+
       const fileData = {
         file_url: fileUrl,
         file_name: file.originalname,
@@ -197,11 +197,11 @@ export const uploadMultipleTechPackFiles = asyncHandler(async (req, res) => {
         uploaded_at: new Date(),
         metadata: getFileMetadata(file),
       };
-      
+
       techPack.uploaded_files.push(fileData);
       uploadedFiles.push(fileData);
     }
-    
+
     await techPack.save();
 
     console.log(`[TechPack] ${req.files.length} files uploaded to Tech Pack: ${id}`);
@@ -209,7 +209,7 @@ export const uploadMultipleTechPackFiles = asyncHandler(async (req, res) => {
     sendResponse(res, {
       statusCode: 200,
       message: `${req.files.length} files uploaded successfully`,
-      data: { 
+      data: {
         files: uploadedFiles.map(file => ({
           file_url: file.file_url,
           file_name: file.file_name,
@@ -223,14 +223,14 @@ export const uploadMultipleTechPackFiles = asyncHandler(async (req, res) => {
     });
   } catch (err) {
     console.error("[TechPack] Error uploading multiple files:", err);
-    
+
     // Clean up uploaded files if database save fails
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         await deleteFileFromStorage(file.path);
       }
     }
-    
+
     sendResponse(res, {
       statusCode: 500,
       message: err.message || "Failed to upload files",
@@ -242,7 +242,7 @@ export const uploadMultipleTechPackFiles = asyncHandler(async (req, res) => {
 export const deleteTechPackFile = asyncHandler(async (req, res) => {
   try {
     const { id, fileId } = req.params;
-    
+
     // Find tech pack
     const techPack = await TechPack.findOne({
       _id: id,
@@ -309,7 +309,7 @@ export const getTechPackFiles = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     const { file_type } = req.query; // Optional filter by file type
-    
+
     const techPack = await TechPack.findOne({
       _id: id,
       user_id: req.user.id,
@@ -324,7 +324,7 @@ export const getTechPackFiles = asyncHandler(async (req, res) => {
     }
 
     let files = techPack.uploaded_files || [];
-    
+
     // Filter by file type if specified
     if (file_type) {
       files = files.filter(file => file.file_type === file_type);
@@ -385,7 +385,7 @@ export const getTechPackFiles = asyncHandler(async (req, res) => {
 //     techPack.uploaded_files = techPack.uploaded_files.filter(
 //       file => file._id.toString() !== fileId
 //     );
-    
+
 //     await techPack.save();
 
 //     sendResponse(res, {
@@ -407,21 +407,21 @@ export const getTechPackFiles = asyncHandler(async (req, res) => {
  */
 const validateBOMItems = (items, requiredFields = ['item', 'quantity']) => {
   const blankItems = [];
-  
+
   items.forEach((item, index) => {
     const blankFields = [];
-    
+
     requiredFields.forEach(field => {
       const value = item[field];
-      
+
       // Check if field is empty/null/undefined/0
-      if (value === null || value === undefined || value === '' || 
-          (field === 'quantity' && value === 0)) {
+      if (value === null || value === undefined || value === '' ||
+        (field === 'quantity' && value === 0)) {
         blankFields.push(field);
         item.isBlank = true;
       }
     });
-    
+
     if (blankFields.length > 0) {
       blankItems.push({
         index,
@@ -431,7 +431,7 @@ const validateBOMItems = (items, requiredFields = ['item', 'quantity']) => {
       });
     }
   });
-  
+
   return blankItems;
 };
 
@@ -460,7 +460,7 @@ const applyItemInheritance = (items, inheritedWastageAllowance, inheritedInclude
         if (item.includeCost === undefined) item.includeCost = inheritedIncludeCost;
       }
     }
-    
+
     // Calculate total cost with inheritance applied
     item.totalCost = calculateItemTotalCost(item);
     return item;
@@ -530,7 +530,7 @@ const updateBOMItemHistory = async (userId, tenantId, fieldType, value) => {
   try {
     await BOMItemHistory.findOneAndUpdate(
       { user_id: userId, tenant_id: tenantId, fieldType, value },
-      { 
+      {
         $inc: { usageCount: 1 },
         $set: { lastUsed: new Date() }
       },
@@ -546,7 +546,7 @@ const calculateItemTotalCost = (item) => {
   if (!item.includeCost || !item.cost || !item.quantity) {
     return 0;
   }
-  
+
   const wastage = item.wastageAllowance || 0;
   const costWithWastage = item.cost + (item.cost * (wastage / 100));
   return costWithWastage * item.quantity;
@@ -555,7 +555,7 @@ const calculateItemTotalCost = (item) => {
 // Helper function to calculate grand total
 const calculateGrandTotal = (bom) => {
   let total = 0;
-  
+
   if (bom.structure === 'single' && bom.flatItems) {
     bom.flatItems.forEach(item => {
       if (item.includeCost) {
@@ -570,7 +570,7 @@ const calculateGrandTotal = (bom) => {
         }
       });
     };
-    
+
     const traverseSections = (sections) => {
       sections.forEach(section => {
         calculateSectionTotal(section);
@@ -579,10 +579,10 @@ const calculateGrandTotal = (bom) => {
         }
       });
     };
-    
+
     traverseSections(bom.sections);
   }
-  
+
   return parseFloat(total.toFixed(2));
 };
 
@@ -592,12 +592,12 @@ const calculateGrandTotal = (bom) => {
 export const createBOM = asyncHandler(async (req, res) => {
   try {
     const { techPackId } = req.params;
-    const { 
-      structure, 
-      viewType, 
-      sections, 
-      flatItems, 
-      inheritedWastageAllowance, 
+    const {
+      structure,
+      viewType,
+      sections,
+      flatItems,
+      inheritedWastageAllowance,
       inheritedIncludeCost,
       requiredFields = ['item', 'quantity']
     } = req.body;
@@ -626,7 +626,7 @@ export const createBOM = asyncHandler(async (req, res) => {
     // let blankItems = [];
     // if (structure === 'single' && flatItems && flatItems.length > 0) {
     //   blankItems = validateBOMItems(flatItems, requiredFields);
-      
+
     //   // If there are blank items, return them for client-side warning
     //   if (blankItems.length > 0) {
     //     return sendResponse(res, {
@@ -696,12 +696,12 @@ export const createBOM = asyncHandler(async (req, res) => {
 export const updateBOM = asyncHandler(async (req, res) => {
   try {
     const { techPackId } = req.params;
-    const { 
-      structure, 
-      viewType, 
-      sections, 
-      flatItems, 
-      inheritedWastageAllowance, 
+    const {
+      structure,
+      viewType,
+      sections,
+      flatItems,
+      inheritedWastageAllowance,
       inheritedIncludeCost,
       requiredFields = ['item', 'quantity'],
       forceIgnoreValidation = false // Flag to skip validation if user chooses to save anyway
@@ -727,7 +727,7 @@ export const updateBOM = asyncHandler(async (req, res) => {
     // Validate items if not forced to skip
     // if (!forceIgnoreValidation && flatItems && flatItems.length > 0) {
     //   const blankItems = validateBOMItems(flatItems, requiredFields);
-      
+
     //   if (blankItems.length > 0) {
     //     return sendResponse(res, {
     //       statusCode: 400,
@@ -744,7 +744,7 @@ export const updateBOM = asyncHandler(async (req, res) => {
     if (structure !== undefined) techPack.bom.structure = structure;
     if (viewType !== undefined) techPack.bom.viewType = viewType;
     if (sections !== undefined) techPack.bom.sections = sections;
-    
+
     if (flatItems !== undefined) {
       let processedItems = applyItemInheritance(
         flatItems,
@@ -1127,60 +1127,60 @@ export const deleteBOMSection = asyncHandler(async (req, res) => {
 });
 
 export const createVariation = asyncHandler(async (req, res) => {
-    try {
-        const { use_case, engine, prompt, variant_count, galleryImageId, generatedImageUrl } = req.body;
+  try {
+    const { use_case, engine, prompt, variant_count, galleryImageId, generatedImageUrl } = req.body;
 
-        // ✅ Save to Gallery
-        const uploadedImage = await GalleryImage.create({
-            url: `${process.env.BASE_URL}/${req.file.path.replace(/^public[\\/]/, "").replace(/\\/g, "/")}`,
-            name: req.file.originalname,
-            status: "uploaded",
-            tenant_id: req.user.tenant_id,
-            user_id: req.user.id,
-        });
+    // ✅ Save to Gallery
+    const uploadedImage = await GalleryImage.create({
+      url: `${process.env.BASE_URL}/${req.file.path.replace(/^public[\\/]/, "").replace(/\\/g, "/")}`,
+      name: req.file.originalname,
+      status: "uploaded",
+      tenant_id: req.user.tenant_id,
+      user_id: req.user.id,
+    });
 
-        // ✅ Use common function to resolve image source
-        const { stream, filename } = await getImageStream({
-            galleryImageId,
-            generatedImageUrl,
-            file: req.file,
-        });
+    // ✅ Use common function to resolve image source
+    const { stream, filename } = await getImageStream({
+      galleryImageId,
+      generatedImageUrl,
+      file: req.file,
+    });
 
-        const formData = new FormData();
-        formData.append("use_case", use_case || "dress_variations");
-        formData.append("engine", "gpt_image_1");
-        formData.append("variant_count", variant_count || 1);
-        formData.append("image", stream, { filename });
-        formData.append("prompt", prompt || "");
+    const formData = new FormData();
+    formData.append("use_case", use_case || "dress_variations");
+    formData.append("engine", "gpt_image_1");
+    formData.append("variant_count", variant_count || 1);
+    formData.append("image", stream, { filename });
+    formData.append("prompt", prompt || "");
 
-        const response = await axios.post(
-            `${process.env.AI_URL}/generate/dress-variations/async`,
-            formData,
-            { headers: formData.getHeaders() },
-        );
-        const taskId = response.data.task_id;
-        // const taskId = "123456";
+    const response = await axios.post(
+      `${process.env.AI_URL}/generate/dress-variations/async`,
+      formData,
+      { headers: formData.getHeaders() },
+    );
+    const taskId = response.data.task_id;
+    // const taskId = "123456";
 
-        await AiTask.create({
-            user_id: req.user.id,
-            task: "image_variation",
-            task_id: taskId,
-            gallery_image_ids: [uploadedImage.id],
-        });
+    await AiTask.create({
+      user_id: req.user.id,
+      task: "image_variation",
+      task_id: taskId,
+      gallery_image_ids: [uploadedImage.id],
+    });
 
-        sendResponse(res, {
-            statusCode: 200,
-            message: "Task queued successfully",
-            data: { task_id: taskId },
-        });
-    } catch (err) {
-        console.error("Error:", err);
-        await handleImageVariationFailure(req.user.id, req.io);
-        sendResponse(res, {
-            statusCode: 500,
-            message: "Failed to queue image generation",
-        });
-    }
+    sendResponse(res, {
+      statusCode: 200,
+      message: "Task queued successfully",
+      data: { task_id: taskId },
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    await handleImageVariationFailure(req.user.id, req.io);
+    sendResponse(res, {
+      statusCode: 500,
+      message: "Failed to queue image generation",
+    });
+  }
 });
 
 export const createTechPacks = asyncHandler(async (req, res) => {
@@ -1189,7 +1189,7 @@ export const createTechPacks = asyncHandler(async (req, res) => {
 
     // ✅ Resolve image source (uploaded, generated, gallery, or project)
     let stream, filename, fileHash, galleryImage;
-    
+
     // Handle project image URL
     if (projectImageUrl) {
       try {
@@ -1197,10 +1197,10 @@ export const createTechPacks = asyncHandler(async (req, res) => {
         const response = await axios.get(projectImageUrl, {
           responseType: 'stream'
         });
-        
+
         stream = response.data;
         filename = projectImageUrl.split('/').pop() || 'project-image.jpg';
-        
+
         // Create gallery image record for project image
         galleryImage = await GalleryImage.create({
           url: projectImageUrl,
@@ -1210,7 +1210,7 @@ export const createTechPacks = asyncHandler(async (req, res) => {
           user_id: req.user.id,
           project_image_id: projectImageId || null,
         });
-        
+
       } catch (error) {
         console.error("Error fetching project image:", error);
         return sendResponse(res, {
@@ -1225,7 +1225,7 @@ export const createTechPacks = asyncHandler(async (req, res) => {
         generatedImageUrl,
         file: req.file,
       });
-      
+
       stream = imageData.stream;
       filename = imageData.filename;
       fileHash = imageData.fileHash;
@@ -1280,7 +1280,7 @@ export const createTechPacks = asyncHandler(async (req, res) => {
           tenant_id: req.user.tenant_id,
           user_id: req.user.id,
         });
-      }else if(galleryImageId){
+      } else if (galleryImageId) {
         // ✅ Handle case where user selects an existing gallery image
         const existingImage = await GalleryImage.findById(galleryImageId);
 
@@ -1341,178 +1341,178 @@ export const createTechPacks = asyncHandler(async (req, res) => {
 });
 
 export const createSketchToImage = asyncHandler(async (req, res) => {
-    try {
-        const { use_case, engine, prompt, variant_count, galleryImageId, generatedImageUrl } = req.body;
+  try {
+    const { use_case, engine, prompt, variant_count, galleryImageId, generatedImageUrl } = req.body;
 
-        // ✅ Save to Gallery
-        const galleryImage = await GalleryImage.create({
-            url: `${process.env.BASE_URL}/${req.file.path.replace(/^public[\\/]/, "").replace(/\\/g, "/")}`,
-            name: req.file.originalname,
-            status: "uploaded",
-            tenant_id: req.user.tenant_id,
-            user_id: req.user.id,
-        });
+    // ✅ Save to Gallery
+    const galleryImage = await GalleryImage.create({
+      url: `${process.env.BASE_URL}/${req.file.path.replace(/^public[\\/]/, "").replace(/\\/g, "/")}`,
+      name: req.file.originalname,
+      status: "uploaded",
+      tenant_id: req.user.tenant_id,
+      user_id: req.user.id,
+    });
 
-        
-        // ✅ Use common function to resolve image source
-        const { stream, filename } = await getImageStream({
-            galleryImageId,
-            generatedImageUrl,
-            file: req.file,
-        });
 
-        const formData = new FormData();
-        formData.append("use_case", use_case || "sketch_to_image");
-        formData.append("engine", "gpt_image_1");
-        formData.append("variant_count", variant_count || 1);
-        formData.append("image", stream, { filename });
-        formData.append("prompt", prompt || "");
-        const response = await axios.post(
-            `${process.env.AI_URL}/generate/sketch-to-image/async`,
-            formData,
-            { headers: formData.getHeaders() },
-        );
+    // ✅ Use common function to resolve image source
+    const { stream, filename } = await getImageStream({
+      galleryImageId,
+      generatedImageUrl,
+      file: req.file,
+    });
 
-        const taskId = response.data.task_id;
+    const formData = new FormData();
+    formData.append("use_case", use_case || "sketch_to_image");
+    formData.append("engine", "gpt_image_1");
+    formData.append("variant_count", variant_count || 1);
+    formData.append("image", stream, { filename });
+    formData.append("prompt", prompt || "");
+    const response = await axios.post(
+      `${process.env.AI_URL}/generate/sketch-to-image/async`,
+      formData,
+      { headers: formData.getHeaders() },
+    );
 
-        await AiTask.create({
-            user_id: req.user.id,
-            task: "sketch_to_image",
-            task_id: taskId,
-            gallery_image_ids: [galleryImage.id],
-        });
+    const taskId = response.data.task_id;
 
-        sendResponse(res, {
-            statusCode: 200,
-            message: "Task queued successfully",
-            data: { task_id: taskId },
-        });
-    } catch (err) {
-        console.error("Error:", err);
-        await handleImageVariationFailure(req.user.id, req.io);
-        sendResponse(res, {
-            statusCode: 500,
-            message: "Failed to queue image generation",
-        });
-    }
+    await AiTask.create({
+      user_id: req.user.id,
+      task: "sketch_to_image",
+      task_id: taskId,
+      gallery_image_ids: [galleryImage.id],
+    });
+
+    sendResponse(res, {
+      statusCode: 200,
+      message: "Task queued successfully",
+      data: { task_id: taskId },
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    await handleImageVariationFailure(req.user.id, req.io);
+    sendResponse(res, {
+      statusCode: 500,
+      message: "Failed to queue image generation",
+    });
+  }
 });
 
 export const createCombineImage = asyncHandler(async (req, res) => {
-    try {
-        const {
-            use_case,
-            engine,
-            style_focus,
-            color_scheme,
-            output_type,
-            custom_colors,
-            prompt,
-            variant_count,
-            tolerance_chest,
-            tolerance_waist,
-            tolerance_hip,
-            tolerance_length,
-            tolerance_sleeve,
-            tolerance_shoulder,
-            baseGalleryImageId,
-            baseGeneratedUrl,
-            styleGalleryImageId,
-            styleGeneratedUrl,
-        } = req.body;
+  try {
+    const {
+      use_case,
+      engine,
+      style_focus,
+      color_scheme,
+      output_type,
+      custom_colors,
+      prompt,
+      variant_count,
+      tolerance_chest,
+      tolerance_waist,
+      tolerance_hip,
+      tolerance_length,
+      tolerance_sleeve,
+      tolerance_shoulder,
+      baseGalleryImageId,
+      baseGeneratedUrl,
+      styleGalleryImageId,
+      styleGeneratedUrl,
+    } = req.body;
 
-        const baseImageFile = req.files?.base_image?.[0];
-        const styleImageFile = req.files?.style_image?.[0];
+    const baseImageFile = req.files?.base_image?.[0];
+    const styleImageFile = req.files?.style_image?.[0];
 
-        // ✅ Save both to gallery
-        const galleryImageIDs = [];
-        for (const imageFile of [baseImageFile, styleImageFile]) {
-            if (imageFile) {
+    // ✅ Save both to gallery
+    const galleryImageIDs = [];
+    for (const imageFile of [baseImageFile, styleImageFile]) {
+      if (imageFile) {
 
-                const galleryImage = await GalleryImage.create({
-                    url: `${process.env.BASE_URL}/${imageFile.path.replace(/^public[\\/]/, "").replace(/\\/g, "/")}`,
-                    name: imageFile.originalname,
-                    status: "uploaded",
-                    tenant_id: req.user.tenant_id,
-                    user_id: req.user.id,
-                });
-                galleryImageIDs.push(galleryImage.id);
-            }
-        }
-
-        // ✅ Resolve Base Image (file / galleryId / generatedUrl)
-        const { stream: baseStream, filename: baseFilename } = await getImageStream({
-            galleryImageId: baseGalleryImageId,
-            generatedImageUrl: baseGeneratedUrl,
-            file: baseImageFile,
+        const galleryImage = await GalleryImage.create({
+          url: `${process.env.BASE_URL}/${imageFile.path.replace(/^public[\\/]/, "").replace(/\\/g, "/")}`,
+          name: imageFile.originalname,
+          status: "uploaded",
+          tenant_id: req.user.tenant_id,
+          user_id: req.user.id,
         });
-
-        // ✅ Resolve Style Image (file / galleryId / generatedUrl)
-        const { stream: styleStream, filename: styleFilename } = await getImageStream({
-            galleryImageId: styleGalleryImageId,
-            generatedImageUrl: styleGeneratedUrl,
-            file: styleImageFile,
-        });
-
-        const formData = new FormData();
-        console.log(variant_count,"variant_count-combine")
-        formData.append("use_case", use_case || "image_fusion");
-        formData.append("engine", "gpt_image_1");
-        // formData.append("base_image", fs.createReadStream(baseImageFile.path));
-        // formData.append("style_image", fs.createReadStream(styleImageFile.path));
-        formData.append("style_focus", style_focus);
-        formData.append("color_scheme", color_scheme);
-        formData.append("output_type", output_type);
-        formData.append("custom_colors", custom_colors || "");
-        formData.append("variant_count", variant_count || 1);
-        formData.append("prompt", prompt || "");
-        formData.append("use_case", use_case || "image_fusion");
-        formData.append("base_image", baseStream, { filename: baseFilename });
-        formData.append("style_image", styleStream, { filename: styleFilename });
-
-        if (
-            tolerance_chest ||
-            tolerance_waist ||
-            tolerance_hip ||
-            tolerance_length ||
-            tolerance_sleeve ||
-            tolerance_shoulder
-        ) {
-            formData.append("tolerance_chest", tolerance_chest || "0.5");
-            formData.append("tolerance_waist", tolerance_waist || "0.5");
-            formData.append("tolerance_hip", tolerance_hip || "0.5");
-            formData.append("tolerance_length", tolerance_length || "0.5");
-            formData.append("tolerance_sleeve", tolerance_sleeve || "0.5");
-            formData.append("tolerance_shoulder", tolerance_shoulder || "0.25");
-        }
-
-        const response = await axios.post(
-            `${process.env.AI_URL}/generate/image-fusion/async`,
-            formData,
-            { headers: formData.getHeaders() },
-        );
-
-        const taskId = response.data.task_id;
-
-        await AiTask.create({
-            user_id: req.user.id,
-            task: "combine_image",
-            task_id: taskId,
-            gallery_image_ids: galleryImageIDs,
-        });
-
-        sendResponse(res, {
-            statusCode: 200,
-            message: "Task queued successfully",
-            data: { task_id: taskId },
-        });
-    } catch (err) {
-        console.error("Error:", err);
-        await handleImageVariationFailure(req.user.id, req.io);
-        sendResponse(res, {
-            statusCode: 500,
-            message: "Failed to queue image generation",
-        });
+        galleryImageIDs.push(galleryImage.id);
+      }
     }
+
+    // ✅ Resolve Base Image (file / galleryId / generatedUrl)
+    const { stream: baseStream, filename: baseFilename } = await getImageStream({
+      galleryImageId: baseGalleryImageId,
+      generatedImageUrl: baseGeneratedUrl,
+      file: baseImageFile,
+    });
+
+    // ✅ Resolve Style Image (file / galleryId / generatedUrl)
+    const { stream: styleStream, filename: styleFilename } = await getImageStream({
+      galleryImageId: styleGalleryImageId,
+      generatedImageUrl: styleGeneratedUrl,
+      file: styleImageFile,
+    });
+
+    const formData = new FormData();
+    console.log(variant_count, "variant_count-combine")
+    formData.append("use_case", use_case || "image_fusion");
+    formData.append("engine", "gpt_image_1");
+    // formData.append("base_image", fs.createReadStream(baseImageFile.path));
+    // formData.append("style_image", fs.createReadStream(styleImageFile.path));
+    formData.append("style_focus", style_focus);
+    formData.append("color_scheme", color_scheme);
+    formData.append("output_type", output_type);
+    formData.append("custom_colors", custom_colors || "");
+    formData.append("variant_count", variant_count || 1);
+    formData.append("prompt", prompt || "");
+    formData.append("use_case", use_case || "image_fusion");
+    formData.append("base_image", baseStream, { filename: baseFilename });
+    formData.append("style_image", styleStream, { filename: styleFilename });
+
+    if (
+      tolerance_chest ||
+      tolerance_waist ||
+      tolerance_hip ||
+      tolerance_length ||
+      tolerance_sleeve ||
+      tolerance_shoulder
+    ) {
+      formData.append("tolerance_chest", tolerance_chest || "0.5");
+      formData.append("tolerance_waist", tolerance_waist || "0.5");
+      formData.append("tolerance_hip", tolerance_hip || "0.5");
+      formData.append("tolerance_length", tolerance_length || "0.5");
+      formData.append("tolerance_sleeve", tolerance_sleeve || "0.5");
+      formData.append("tolerance_shoulder", tolerance_shoulder || "0.25");
+    }
+
+    const response = await axios.post(
+      `${process.env.AI_URL}/generate/image-fusion/async`,
+      formData,
+      { headers: formData.getHeaders() },
+    );
+
+    const taskId = response.data.task_id;
+
+    await AiTask.create({
+      user_id: req.user.id,
+      task: "combine_image",
+      task_id: taskId,
+      gallery_image_ids: galleryImageIDs,
+    });
+
+    sendResponse(res, {
+      statusCode: 200,
+      message: "Task queued successfully",
+      data: { task_id: taskId },
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    await handleImageVariationFailure(req.user.id, req.io);
+    sendResponse(res, {
+      statusCode: 500,
+      message: "Failed to queue image generation",
+    });
+  }
 });
 
 export const createPatternCutouts = asyncHandler(async (req, res) => {
@@ -1652,8 +1652,8 @@ export const analyzeColorsAsync = asyncHandler(async (req, res) => {
     );
 
 
-    console.log(`${process.env.AI_URL}/api/colors/analyze/async`,'${process.env.AI_URL}/colors/analyze/async')
-    
+    console.log(`${process.env.AI_URL}/api/colors/analyze/async`, '${process.env.AI_URL}/colors/analyze/async')
+
 
     const taskId = response.data.task_id;
 
@@ -1806,107 +1806,107 @@ export const deleteColorAnalysesDoc = asyncHandler(async (req, res) => {
 
 
 export const textToImage = asyncHandler(async (req, res) => {
-    try {
-        const { use_case, engine, prompt, variant_count, advanced_prompt } =
-            req.body;
+  try {
+    const { use_case, engine, prompt, variant_count, advanced_prompt } =
+      req.body;
 
-        const formData = new FormData();
-        formData.append("use_case", use_case || "text_to_sketch");
-        formData.append("engine", "gpt_image_1");
-        formData.append("variant_count", variant_count || 1);
-        formData.append("prompt", prompt || "");
-        formData.append("advanced_prompt", advanced_prompt || "");
+    const formData = new FormData();
+    formData.append("use_case", use_case || "text_to_sketch");
+    formData.append("engine", "gpt_image_1");
+    formData.append("variant_count", variant_count || 1);
+    formData.append("prompt", prompt || "");
+    formData.append("advanced_prompt", advanced_prompt || "");
 
-        const response = await axios.post(
-            `${process.env.AI_URL}/generate/text-to-sketch/async`,
-            formData,
-            { headers: formData.getHeaders() },
-        );
+    const response = await axios.post(
+      `${process.env.AI_URL}/generate/text-to-sketch/async`,
+      formData,
+      { headers: formData.getHeaders() },
+    );
 
-        const taskId = response.data.task_id;
+    const taskId = response.data.task_id;
 
-        await AiTask.create({
-            user_id: req.user.id,
-            task: "text_to_image",
-            task_id: taskId,
-        });
+    await AiTask.create({
+      user_id: req.user.id,
+      task: "text_to_image",
+      task_id: taskId,
+    });
 
-        sendResponse(res, {
-            statusCode: 200,
-            message: "Task queued successfully",
-            data: { task_id: taskId },
-        });
-    } catch (err) {
-        console.error("Error:", err);
-        await handleImageVariationFailure(req.user.id, req.io);
-        sendResponse(res, {
-            statusCode: 500,
-            message: "Failed to queue image generation",
-        });
-    }
+    sendResponse(res, {
+      statusCode: 200,
+      message: "Task queued successfully",
+      data: { task_id: taskId },
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    await handleImageVariationFailure(req.user.id, req.io);
+    sendResponse(res, {
+      statusCode: 500,
+      message: "Failed to queue image generation",
+    });
+  }
 });
 
 export const createColorVariation = asyncHandler(async (req, res) => {
-    try {
-        const { use_case, engine, variant_count, size, prompt, palette, custom_colors, texture, pattern, async, galleryImageId, generatedImageUrl } = req.body;
+  try {
+    const { use_case, engine, variant_count, size, prompt, palette, custom_colors, texture, pattern, async, galleryImageId, generatedImageUrl } = req.body;
 
-        // ✅ Save to Gallery
-        const uploadedImage = await GalleryImage.create({
-            url: `${process.env.BASE_URL}/${req.file.path.replace(/^public[\\/]/, "").replace(/\\/g, "/")}`,
-            name: req.file.originalname,
-            status: "uploaded",
-            tenant_id: req.user.tenant_id,
-            user_id: req.user.id,
-        });
+    // ✅ Save to Gallery
+    const uploadedImage = await GalleryImage.create({
+      url: `${process.env.BASE_URL}/${req.file.path.replace(/^public[\\/]/, "").replace(/\\/g, "/")}`,
+      name: req.file.originalname,
+      status: "uploaded",
+      tenant_id: req.user.tenant_id,
+      user_id: req.user.id,
+    });
 
-        // ✅ Use common function to resolve image source
-        const { stream, filename } = await getImageStream({
-            galleryImageId,
-            generatedImageUrl,
-            file: req.file,
-        });
+    // ✅ Use common function to resolve image source
+    const { stream, filename } = await getImageStream({
+      galleryImageId,
+      generatedImageUrl,
+      file: req.file,
+    });
 
-        const formData = new FormData();
-        formData.append("use_case", use_case || "color_variations");
-        formData.append("engine", engine || "gpt_image_1");
-        formData.append("variant_count", variant_count || 1);
-        formData.append("size", size || "1024x1024");
-        formData.append("prompt", prompt || "");
-        formData.append("palette", palette || "");
-        formData.append("custom_colors", custom_colors || "");
-        formData.append("texture", texture || "");
-        formData.append("pattern", pattern || "");
-        formData.append("async", async || "true");
-        formData.append("image", stream, { filename });
+    const formData = new FormData();
+    formData.append("use_case", use_case || "color_variations");
+    formData.append("engine", engine || "gpt_image_1");
+    formData.append("variant_count", variant_count || 1);
+    formData.append("size", size || "1024x1024");
+    formData.append("prompt", prompt || "");
+    formData.append("palette", palette || "");
+    formData.append("custom_colors", custom_colors || "");
+    formData.append("texture", texture || "");
+    formData.append("pattern", pattern || "");
+    formData.append("async", async || "true");
+    formData.append("image", stream, { filename });
 
-        const response = await axios.post(
-            `${process.env.AI_URL}/generate/create`,
-            formData,
-            { headers: formData.getHeaders() },
-        );
-        const taskId = response.data.task_id;
-        // const taskId = "123456";
+    const response = await axios.post(
+      `${process.env.AI_URL}/generate/create`,
+      formData,
+      { headers: formData.getHeaders() },
+    );
+    const taskId = response.data.task_id;
+    // const taskId = "123456";
 
-        await AiTask.create({
-            user_id: req.user.id,
-            task: "color_variations",
-            task_id: taskId,
-            gallery_image_ids: [uploadedImage.id],
-        });
+    await AiTask.create({
+      user_id: req.user.id,
+      task: "color_variations",
+      task_id: taskId,
+      gallery_image_ids: [uploadedImage.id],
+    });
 
-        sendResponse(res, {
-            statusCode: 200,
-            message: "Task queued successfully",
-            data: { task_id: taskId },
-        });
-    } catch (err) {
-        console.error("Error:", err);
-        await handleImageVariationFailure(req.user.id, req.io);
-        sendResponse(res, {
-            statusCode: 500,
-            message: "Failed to queue image generation",
-        });
-    }
+    sendResponse(res, {
+      statusCode: 200,
+      message: "Task queued successfully",
+      data: { task_id: taskId },
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    await handleImageVariationFailure(req.user.id, req.io);
+    sendResponse(res, {
+      statusCode: 500,
+      message: "Failed to queue image generation",
+    });
+  }
 });
 
 const incrementOutputsPerModule = async ({ userCredit, type, user_id, tenant_id }) => {
@@ -1970,7 +1970,7 @@ const incrementOutputsPerModule = async ({ userCredit, type, user_id, tenant_id 
       });
       break;
 
-       case 'tech_packs':
+    case 'tech_packs':
       await UsageLog.create({
         module: 'tech_packs',
         type: 'output_produced',
@@ -1989,808 +1989,808 @@ const incrementOutputsPerModule = async ({ userCredit, type, user_id, tenant_id 
 
 let isPollingRunning = false;
 export const startTaskStatusPolling = () => {
-    console.log("✅ Task polling started...");
+  console.log("✅ Task polling started...");
 
-    setInterval(async () => {
-        // Check if previous polling is still running
-        if (isPollingRunning) {
-            console.log("⏳ Previous polling still running, skipping...");
-            return;
-        }
-        
-        // Set flag to indicate polling is running
-        isPollingRunning = true;
-        
-        console.log("🔄 Checking queued dress tasks...");
+  setInterval(async () => {
+    // Check if previous polling is still running
+    if (isPollingRunning) {
+      console.log("⏳ Previous polling still running, skipping...");
+      return;
+    }
 
-        try {
-            console.log("➡ Fetching pending tasks from DB...");
-            const pendingTasks = await AiTask.find({ status: "queued" });
-            console.log(`📦 Found ${pendingTasks.length} pending tasks.`);
+    // Set flag to indicate polling is running
+    isPollingRunning = true;
 
-            for (const task of pendingTasks) {
-                const { task_id } = task;
-                const sketchToImageArray = [];
-                console.log(`🔍 Checking status for task_id: ${task_id}`);
+    console.log("🔄 Checking queued dress tasks...");
 
-                const statusUrl = `${process.env.AI_URL}/task/status/${task_id}`;
-                const aiTaskType = task.task;
-                console.log(`🌐 Sending GET request to ${statusUrl}`);
+    try {
+      console.log("➡ Fetching pending tasks from DB...");
+      const pendingTasks = await AiTask.find({ status: "queued" });
+      console.log(`📦 Found ${pendingTasks.length} pending tasks.`);
 
-                const response = await axios.get(statusUrl);
-                const status = response.data.status;
-                let isTypeSizeChart = false;
-                console.log(
-                    `📥 Received status: ${status} for task_id: ${task_id}`,
-                );
+      for (const task of pendingTasks) {
+        const { task_id } = task;
+        const sketchToImageArray = [];
+        console.log(`🔍 Checking status for task_id: ${task_id}`);
 
-                if (status === "completed") {
-                    console.log(`✅ Task ${task_id} marked as completed.`);
-                    
-                    // Declare all variables at the top of this scope
-                    const rawResult = response.data.result;
-                    const hasMeasurementData = rawResult?.data?.measurements;
-                    const toleranceData = rawResult?.tolerance;
-                    const gradingData = rawResult?.grading_rules;
-                    const internationalSizeData = rawResult?.size_conversion;
-                    let sizeSchemaId;
-                    let colorAnalysisDoc = null;
-                    
-                    let userCredit = await UserCredits.findOne({user_id: task?.user_id})
-                    if(!userCredit){
-                        console.log('task',task)
-                        const user = await User.findById(task.user_id)
-                        console.log(user,'user')
-                        userCredit = new UserCredits({
-                            user_id: user._id,
-                            tenant_id: user.tenant_id
-                        });
+        const statusUrl = `${process.env.AI_URL}/task/status/${task_id}`;
+        const aiTaskType = task.task;
+        console.log(`🌐 Sending GET request to ${statusUrl}`);
 
-                        await userCredit.save();
-                    }
+        const response = await axios.get(statusUrl);
+        const status = response.data.status;
+        let isTypeSizeChart = false;
+        console.log(
+          `📥 Received status: ${status} for task_id: ${task_id}`,
+        );
 
-                    const baseUrl = process.env.AI_URL;
-                    let resultPaths = [];
-                    
-                    console.log("🧪 Raw result:", rawResult);
-                    
-                    // Fix the condition structure
-                    if(aiTaskType === TASK_TYPE.PATTERN_CUTOUT){
-                        resultPaths = rawResult?.components || [];
-                    }else if(aiTaskType === TASK_TYPE.TECH_PACK){
-                        resultPaths = rawResult
-                    }else if (typeof rawResult === "string") {
-                        console.log("📄 Result is a string.");
-                        resultPaths = [`${baseUrl}/${rawResult}`];
-                    } else if (Array.isArray(rawResult)) {
-                        console.log("📚 Result is an array.");
-                        resultPaths = rawResult.map(
-                            (relPath) => `${baseUrl}/${relPath}`,
-                        );
-                    } else if (typeof rawResult === "object") {
-                        console.log("📦 Result is an object.");
-                        if (Array.isArray(rawResult.fusion_images)) {
-                            console.log("🖼️ fusion_images is an array.");
-                            resultPaths = rawResult.fusion_images.map(
-                                (relPath) => `${baseUrl}/${relPath}`,
-                            );
-                        } else if (typeof rawResult.fusion_image === "string") {
-                            console.log("🖼️ fusion_image is a string.");
-                            resultPaths = [
-                                `${baseUrl}/${rawResult.fusion_image}`,
-                            ];
-                        } else if (
-                            typeof rawResult?.annotated_image_path === "string"
-                        ) {
-                            isTypeSizeChart = true
-                            console.log("🖼️ annotated_image_path is a string.");
-                            resultPaths = [
-                                `${baseUrl}/${rawResult.annotated_image_path}`,
-                            ];
-                        } else {
-                            console.log(
-                                "⚠️ No matching result path structure found.",
-                            );
-                        }
-                    } else {
-                        console.log(rawResult,'rawResult')
-                        console.log("❗ Unrecognized result format.");
-                    }
+        if (status === "completed") {
+          console.log(`✅ Task ${task_id} marked as completed.`);
 
-                    console.log(toleranceData, "toleranceData");
-                    console.log(gradingData, "gradingData");
-                    console.log(internationalSizeData, "internationalSizeData");
-                    
-                    // 🔵 Save SizeChart entry if measurements exist
-                    const user = await User.findById(task.user_id)
-                    await incrementOutputsPerModule({userCredit, type:task.task,user_id: user._id, tenant_id: user.tenant_id});
+          // Declare all variables at the top of this scope
+          const rawResult = response.data.result;
+          const hasMeasurementData = rawResult?.data?.measurements;
+          const toleranceData = rawResult?.tolerance;
+          const gradingData = rawResult?.grading_rules;
+          const internationalSizeData = rawResult?.size_conversion;
+          let sizeSchemaId;
+          let colorAnalysisDoc = null;
 
-                    if (hasMeasurementData) {
-                        try {
-                            const aiTask =  await AiTask.findOne({ task_id })
+          let userCredit = await UserCredits.findOne({ user_id: task?.user_id })
+          if (!userCredit) {
+            console.log('task', task)
+            const user = await User.findById(task.user_id)
+            console.log(user, 'user')
+            userCredit = new UserCredits({
+              user_id: user._id,
+              tenant_id: user.tenant_id
+            });
 
-                            if(aiTask?.confirmation === 'replace'){
-                                const existingCharts = await sizeChartSchema.find({
-                                    user_id: task.user_id,
-                                    fileHash: { $in: aiTask?.fileHash || [] },
-                                    gallery_image_ids: { $in: aiTask?.gallery_image_ids || [] }
-                                });
+            await userCredit.save();
+          }
 
-                                for (const chart of existingCharts) {
-                                    const hasOtherRefs =
-                                        (chart.fileHash.length > (aiTask?.fileHash?.length || 0)) ||
-                                        (chart.gallery_image_ids.length > (aiTask?.gallery_image_ids?.length || 0));
+          const baseUrl = process.env.AI_URL;
+          let resultPaths = [];
 
-                                    if (hasOtherRefs) {
-                                        // Just pull the references
-                                        await sizeChartSchema.updateOne(
-                                            { _id: chart._id },
-                                            {
-                                                $pull: {
-                                                    fileHash: { $in: aiTask?.fileHash || [] },
-                                                    gallery_image_ids: { $in: aiTask?.gallery_image_ids || [] }
-                                                }
-                                            }
-                                        );
-                                    } else {
-                                        // Last one → delete the whole chart
-                                        await sizeChartSchema.deleteOne({ _id: chart._id });
-                                        console.log(`Deleted last size chart for fileHash ${aiTask?.fileHash}`);
-                                    }
-                                }
-                            }
+          console.log("🧪 Raw result:", rawResult);
 
-                              let sizeChartName = "Untitled-SizeChart";
-                              if (aiTask?.gallery_image_ids?.length > 0) {
-                                const firstGalleryImage = await GalleryImage.findById(aiTask.gallery_image_ids[0]);
-                                if (firstGalleryImage) {
-                                  const baseName = firstGalleryImage.name?.replace(/\.[^/.]+$/, "") || "Untitled";
-                                  const existingCharts = await sizeChartSchema.find({
-                                    gallery_image_ids: aiTask.gallery_image_ids[0],
-                                  });
-                                  if (existingCharts.length === 0) {
-                                    sizeChartName = `${baseName}-SizeChart`;
-                                  } else {
-                                    sizeChartName = `${baseName}-SizeChart-${existingCharts.length + 1}`;
-                                  }
-                                }
-                              }
-
-                            const sizeChart = await sizeChartSchema.create({
-                                user_id: task.user_id,
-                                tenant_id: user.tenant_id,
-                                task_id: task_id,
-                                status: "completed",
-                                name: sizeChartName,
-                                measurements: rawResult?.data?.measurements,
-                                grading_rules: rawResult?.grading_rules,
-                                tolerance: rawResult?.tolerance,
-                                size_conversion : rawResult?.size_conversion,
-                                fileHash:aiTask?.fileHash|| [],
-                                generation_source:"ai_generated",
-                                gallery_image_ids: aiTask?.gallery_image_ids || [],
-                                results: [],
-                                market: aiTask?.meta?.market,
-                                unit: aiTask?.meta?.unit
-                            });
-
-                            console.log('size Chart<>?<><><><',sizeChart,aiTask?.metadata?.galleryID)
-                            sizeSchemaId = sizeChart._id;
-                            
-                            // Update size chart counts in user consumption tracking
-                            await UserCredits.findOneAndUpdate(
-                              { 
-                                user_id: task.user_id, 
-                                tenant_id: user.tenant_id 
-                              },
-                              { 
-                                $inc: { 
-                                  sizeChartGenerated: 1,
-                                  sizeChartsSinceLastReview: 1
-                                } 
-                              },
-                              { upsert: true, setDefaultsOnInsert: true }
-                            );
-                            console.log(
-                                `💾 Saved size chart for task ${task_id}.`,
-                            );
-                        } catch (err) {
-                            console.error(
-                                `❌ Error saving size chart for ${task_id}: ${err.message}`,
-                            );
-                        }
-                    } else {
-                        console.log(`⚠️ No measurements found for ${task_id}.`);
-                    }
-
-                    // 🎨 Handle sketch_to_image tasks - create GalleryImage documents
-                    if (task.task === "sketch_to_image" && resultPaths.length > 0) {
-                        console.log(`🎨 Processing sketch_to_image task ${task_id}...`);
-                        
-                        try {
-                            // Get user data to access tenant_id
-                            const user = await User.findById(task.user_id);
-                            if (!user) {
-                                console.error(`❌ User not found for task ${task_id}`);
-                            } else {
-                                for (const [index, imagePath] of resultPaths.entries()) {
-                                    const imageName = `sketch_to_image_${task_id}_${index + 1}.jpg`;
-                                    const createdImage = await GalleryImage.create({
-                                        url: imagePath,
-                                        name: imageName,
-                                        description: `Generated from sketch to image task ${task_id}`,
-                                        status: "finalized",
-                                        tenant_id: user.tenant_id,
-                                        user_id: task.user_id,
-                                        task_id: task_id,
-                                        gallery_image_ids: task?.gallery_image_ids?.length  > 0 ? task.gallery_image_ids : []
-                                    });
-
-                                    const creditsToDeduct = task?.gallery_image_ids?.length
-
-                                    await deductCredits({
-                                      tenantId: user.tenant_id,
-                                      userId: task.user_id,
-                                      creditsToDeduct
-                                    });
-
-                                    await UsageLog.create({
-                                        module: task.task === 'image_variation' ? 'ge_variation' : task.task,
-                                        type: 'credit_consumed',
-                                        creditsUsed: 1,
-                                        user_id:task.user_id,
-                                        tenant_id:user.tenant_id,
-                                    });
-
-                                    sketchToImageArray.push({
-                                        url: imagePath,
-                                        id: createdImage._id,
-                                    })
-                                    console.log(`🖼️ Created GalleryImage for ${imageName}`);
-                                }
-                                console.log(`✅ Created ${resultPaths.length} GalleryImage documents for sketch_to_image task ${task_id}`);
-                            }
-                        } catch (err) {
-                            console.error(`❌ Error creating GalleryImage documents for ${task_id}: ${err.message}`);
-                        }
-                    }else if(aiTaskType === TASK_TYPE.PATTERN_CUTOUT){
-                        try {
-                          console.log(`✂️ Creating cutout entry for task ${task_id}...`);
-
-                          const user = await User.findById(task.user_id);
-                          if (!user) {
-                            console.error(`❌ User not found for cutout task ${task_id}`);
-                            return;
-                          }
-
-                          const aiTask = await AiTask.findOne({ task_id });
-
-                          const cutoutDoc = await Cutout.create({
-                            user_id: task.user_id,
-                            tenant_id: user.tenant_id,
-                            task_id: task_id,
-                            status: "completed",
-                            name: aiTask?.name || `Cutouts for ${task_id}`,
-                            message: rawResult?.message || null,
-                            components: rawResult?.components || [],
-                            metadata: rawResult?.metadata || {},
-                            gallery_image_ids: aiTask?.gallery_image_ids || [],
-                            fileHash: aiTask?.fileHash || [],
-                            generation_source: "ai_generated",
-                            market: aiTask?.meta?.market || null,
-                            is_deleted: false,
-                          });
-
-                          console.log(`💾 Saved cutout entry for task ${task_id}`, cutoutDoc._id);
-
-                        } catch (err) {
-                          console.error(`❌ Error saving cutout entry for ${task_id}: ${err.message}`);
-                        }
-                    } else if (aiTaskType === TASK_TYPE.COLOR_ANALYSIS) {
-                        try {
-                            console.log(`🎨 Creating color analysis entry for task ${task_id}...`);
-
-                            const user = await User.findById(task.user_id);
-                            if (!user) {
-                              console.error(`❌ User not found for color analysis task ${task_id}`);
-                              return;
-                            }
-
-                            const aiTask = await AiTask.findOne({ task_id });
-
-                            colorAnalysisDoc = await ColorAnalysis.create({
-                              user_id: task.user_id,
-                              tenant_id: user.tenant_id,
-                              task_id: task_id,
-                              task_type: "garment_color_analysis",
-                              data: rawResult || {},
-                              success: rawResult?.success ?? true,
-                              gallery_image_ids: aiTask?.gallery_image_ids || [],
-                            });
-
-                            console.log(`💾 Saved color analysis entry for task ${task_id}`, colorAnalysisDoc._id);
-
-                        } catch (err) {
-                            console.error(`❌ Error saving color analysis entry for ${task_id}: ${err.message}`);
-                        }
-                    } else if (aiTaskType === TASK_TYPE.TECH_PACK) {
-                        try {
-                          console.log(`📦 Creating TechPack entry for task ${task_id}...`);
-                          const user = await User.findById(task.user_id);
-                          if (!user) {
-                            console.error(`❌ User not found for TechPack task ${task_id}`);
-                            return;
-                          }
-
-                          const aiTask = await AiTask.findOne({ task_id });
-
-                          const techPackDoc = await TechPack.create({
-                            user_id: task.user_id,
-                            tenant_id: user.tenant_id,
-                            task_id: task_id,
-                            status: "completed",
-                            analysis: rawResult?.analysis || {},
-                            tech_pack: rawResult?.tech_pack || {},
-                            gallery_image_ids: aiTask?.gallery_image_ids || [],
-                            generation_source: "ai_generated",
-                            meta: aiTask?.meta || {},
-                          });
-
-                          console.log(`💾 Saved TechPack entry for task ${task_id}`, techPackDoc._id);
-
-                          io.to(task.user_id.toString()).emit("task_update", {
-                            task_id,
-                            status: "completed",
-                            result: rawResult,
-                            techPackId: techPackDoc._id,
-                            gallery_image_ids: aiTask?.gallery_image_ids || [],
-                            task: aiTask?.task || "tech_packs",
-                          });
-
-                          sendNotification(io, {
-                            user_id: user.id,
-                            type: "result_generated",
-                            message: `Tech Pack generated successfully for ${task_id}`,
-                          });
-                        } catch (err) {
-                                                    console.error(`❌ Error saving TechPack entry for ${task_id}: ${err.message}`);
-                        }
-                    }
-
-                    console.log("💾 Updating DB with completed task...");
-                    const aiTask = await AiTask.findOneAndUpdate(
-                        { task_id },
-                        {
-                            status: "completed",
-                            result: (isTypeSizeChart || task.task === "sketch_to_image" || aiTaskType === TASK_TYPE.PATTERN_CUTOUT || aiTaskType === TASK_TYPE.TECH_PACK)
-                            ? []
-                            : resultPaths,
-                        },
-                        {
-                            new: true, // return the updated document
-                        }
-                    );
-
-                    console.log(
-                        "📢 Emitting socket event for completed task...",aiTask
-                    );
-                    let encryptedResults = [];
-                    if(aiTaskType !== TASK_TYPE.PATTERN_CUTOUT && aiTaskType !== TASK_TYPE.COLOR_ANALYSIS && aiTaskType !== TASK_TYPE.TECH_PACK){
-                      encryptedResults = resultPaths.map(galleryService.encryptImagePath);
-                    }
-                    const encryptedSketchToImageArray = sketchToImageArray.map(item => ({
-                        ...item,
-                        url: item.url
-                    }));
-
-                    io.to(task.user_id.toString()).emit("task_update", {
-                        task_id: task.task_id,
-                        status: "completed",
-                        result: isTypeSizeChart
-                        ? []
-                        : task.task === "sketch_to_image"
-                        ? encryptedSketchToImageArray
-                        : task.task === TASK_TYPE.PATTERN_CUTOUT || task.task === TASK_TYPE.TECH_PACK
-                        ? rawResult || {}
-                        : aiTaskType === TASK_TYPE.COLOR_ANALYSIS ?
-                        colorAnalysisDoc
-                        : encryptedResults,
-                        measurements: hasMeasurementData
-                            ? rawResult.data.measurements
-                            : null,
-                        grading_rules: gradingData
-                            ? rawResult.grading_rules
-                            : null,
-                        tolerance: toleranceData
-                            ? rawResult.tolerance
-                            : null,
-                        size_conversion : internationalSizeData
-                            ? rawResult.size_conversion
-                            : null,
-                        sizeChartId: sizeSchemaId,
-                        aiTaskId: aiTask._id,
-                        gallery_image_ids: aiTask?.gallery_image_ids?.length > 0 ? aiTask?.gallery_image_ids : [],
-                        market: aiTask?.meta?.market || null,
-                        unit: aiTask?.meta?.unit || null,
-                        task: aiTask?.task || null
-                    });     
-                    sendNotification(io,{user_id:user.id ,type:"result_generated",message:`Result generated for task ${MODULE_NAME[task.task] || task.task}`})          
-                } else if (status === "failed" || status === "error") {
-                    console.log(
-                        `❌ Task ${task_id} failed with status: ${status}`,
-                    );
-
-                    await AiTask.updateOne(
-                        { task_id: task.task_id },
-                        { status: "failed" },
-                    );
-
-                    console.log("📢 Emitting socket event for failed task...");
-                    io.to(task.user_id.toString()).emit("task_update", {
-                        task_id: task.task_id,
-                        status: "failed",
-                    });
-
-                    console.log("🚨 Handling image variation failure...");
-                    await handleImageVariationFailure(task.user_id, global.io);
-                } else {
-                    // console.log(
-                    //     `⏳ Task ${task_id} is still in status: ${status}`,
-                    // );
-                }
+          // Fix the condition structure
+          if (aiTaskType === TASK_TYPE.PATTERN_CUTOUT) {
+            resultPaths = rawResult?.components || [];
+          } else if (aiTaskType === TASK_TYPE.TECH_PACK) {
+            resultPaths = rawResult
+          } else if (typeof rawResult === "string") {
+            console.log("📄 Result is a string.");
+            resultPaths = [`${baseUrl}/${rawResult}`];
+          } else if (Array.isArray(rawResult)) {
+            console.log("📚 Result is an array.");
+            resultPaths = rawResult.map(
+              (relPath) => `${baseUrl}/${relPath}`,
+            );
+          } else if (typeof rawResult === "object") {
+            console.log("📦 Result is an object.");
+            if (Array.isArray(rawResult.fusion_images)) {
+              console.log("🖼️ fusion_images is an array.");
+              resultPaths = rawResult.fusion_images.map(
+                (relPath) => `${baseUrl}/${relPath}`,
+              );
+            } else if (typeof rawResult.fusion_image === "string") {
+              console.log("🖼️ fusion_image is a string.");
+              resultPaths = [
+                `${baseUrl}/${rawResult.fusion_image}`,
+              ];
+            } else if (
+              typeof rawResult?.annotated_image_path === "string"
+            ) {
+              isTypeSizeChart = true
+              console.log("🖼️ annotated_image_path is a string.");
+              resultPaths = [
+                `${baseUrl}/${rawResult.annotated_image_path}`,
+              ];
+            } else {
+              console.log(
+                "⚠️ No matching result path structure found.",
+              );
             }
-        } catch (error) {
-            console.log(error,'error')
-            console.error("❌ Error in task polling:", error.message);
-        } finally {
-            // Reset flag when polling completes (success or error)
-            isPollingRunning = false;
+          } else {
+            console.log(rawResult, 'rawResult')
+            console.log("❗ Unrecognized result format.");
+          }
+
+          console.log(toleranceData, "toleranceData");
+          console.log(gradingData, "gradingData");
+          console.log(internationalSizeData, "internationalSizeData");
+
+          // 🔵 Save SizeChart entry if measurements exist
+          const user = await User.findById(task.user_id)
+          await incrementOutputsPerModule({ userCredit, type: task.task, user_id: user._id, tenant_id: user.tenant_id });
+
+          if (hasMeasurementData) {
+            try {
+              const aiTask = await AiTask.findOne({ task_id })
+
+              if (aiTask?.confirmation === 'replace') {
+                const existingCharts = await sizeChartSchema.find({
+                  user_id: task.user_id,
+                  fileHash: { $in: aiTask?.fileHash || [] },
+                  gallery_image_ids: { $in: aiTask?.gallery_image_ids || [] }
+                });
+
+                for (const chart of existingCharts) {
+                  const hasOtherRefs =
+                    (chart.fileHash.length > (aiTask?.fileHash?.length || 0)) ||
+                    (chart.gallery_image_ids.length > (aiTask?.gallery_image_ids?.length || 0));
+
+                  if (hasOtherRefs) {
+                    // Just pull the references
+                    await sizeChartSchema.updateOne(
+                      { _id: chart._id },
+                      {
+                        $pull: {
+                          fileHash: { $in: aiTask?.fileHash || [] },
+                          gallery_image_ids: { $in: aiTask?.gallery_image_ids || [] }
+                        }
+                      }
+                    );
+                  } else {
+                    // Last one → delete the whole chart
+                    await sizeChartSchema.deleteOne({ _id: chart._id });
+                    console.log(`Deleted last size chart for fileHash ${aiTask?.fileHash}`);
+                  }
+                }
+              }
+
+              let sizeChartName = "Untitled-SizeChart";
+              if (aiTask?.gallery_image_ids?.length > 0) {
+                const firstGalleryImage = await GalleryImage.findById(aiTask.gallery_image_ids[0]);
+                if (firstGalleryImage) {
+                  const baseName = firstGalleryImage.name?.replace(/\.[^/.]+$/, "") || "Untitled";
+                  const existingCharts = await sizeChartSchema.find({
+                    gallery_image_ids: aiTask.gallery_image_ids[0],
+                  });
+                  if (existingCharts.length === 0) {
+                    sizeChartName = `${baseName}-SizeChart`;
+                  } else {
+                    sizeChartName = `${baseName}-SizeChart-${existingCharts.length + 1}`;
+                  }
+                }
+              }
+
+              const sizeChart = await sizeChartSchema.create({
+                user_id: task.user_id,
+                tenant_id: user.tenant_id,
+                task_id: task_id,
+                status: "completed",
+                name: sizeChartName,
+                measurements: rawResult?.data?.measurements,
+                grading_rules: rawResult?.grading_rules,
+                tolerance: rawResult?.tolerance,
+                size_conversion: rawResult?.size_conversion,
+                fileHash: aiTask?.fileHash || [],
+                generation_source: "ai_generated",
+                gallery_image_ids: aiTask?.gallery_image_ids || [],
+                results: [],
+                market: aiTask?.meta?.market,
+                unit: aiTask?.meta?.unit
+              });
+
+              console.log('size Chart<>?<><><><', sizeChart, aiTask?.metadata?.galleryID)
+              sizeSchemaId = sizeChart._id;
+
+              // Update size chart counts in user consumption tracking
+              await UserCredits.findOneAndUpdate(
+                {
+                  user_id: task.user_id,
+                  tenant_id: user.tenant_id
+                },
+                {
+                  $inc: {
+                    sizeChartGenerated: 1,
+                    sizeChartsSinceLastReview: 1
+                  }
+                },
+                { upsert: true, setDefaultsOnInsert: true }
+              );
+              console.log(
+                `💾 Saved size chart for task ${task_id}.`,
+              );
+            } catch (err) {
+              console.error(
+                `❌ Error saving size chart for ${task_id}: ${err.message}`,
+              );
+            }
+          } else {
+            console.log(`⚠️ No measurements found for ${task_id}.`);
+          }
+
+          // 🎨 Handle sketch_to_image tasks - create GalleryImage documents
+          if (task.task === "sketch_to_image" && resultPaths.length > 0) {
+            console.log(`🎨 Processing sketch_to_image task ${task_id}...`);
+
+            try {
+              // Get user data to access tenant_id
+              const user = await User.findById(task.user_id);
+              if (!user) {
+                console.error(`❌ User not found for task ${task_id}`);
+              } else {
+                for (const [index, imagePath] of resultPaths.entries()) {
+                  const imageName = `sketch_to_image_${task_id}_${index + 1}.jpg`;
+                  const createdImage = await GalleryImage.create({
+                    url: imagePath,
+                    name: imageName,
+                    description: `Generated from sketch to image task ${task_id}`,
+                    status: "finalized",
+                    tenant_id: user.tenant_id,
+                    user_id: task.user_id,
+                    task_id: task_id,
+                    gallery_image_ids: task?.gallery_image_ids?.length > 0 ? task.gallery_image_ids : []
+                  });
+
+                  const creditsToDeduct = task?.gallery_image_ids?.length
+
+                  await deductCredits({
+                    tenantId: user.tenant_id,
+                    userId: task.user_id,
+                    creditsToDeduct
+                  });
+
+                  await UsageLog.create({
+                    module: task.task === 'image_variation' ? 'ge_variation' : task.task,
+                    type: 'credit_consumed',
+                    creditsUsed: 1,
+                    user_id: task.user_id,
+                    tenant_id: user.tenant_id,
+                  });
+
+                  sketchToImageArray.push({
+                    url: imagePath,
+                    id: createdImage._id,
+                  })
+                  console.log(`🖼️ Created GalleryImage for ${imageName}`);
+                }
+                console.log(`✅ Created ${resultPaths.length} GalleryImage documents for sketch_to_image task ${task_id}`);
+              }
+            } catch (err) {
+              console.error(`❌ Error creating GalleryImage documents for ${task_id}: ${err.message}`);
+            }
+          } else if (aiTaskType === TASK_TYPE.PATTERN_CUTOUT) {
+            try {
+              console.log(`✂️ Creating cutout entry for task ${task_id}...`);
+
+              const user = await User.findById(task.user_id);
+              if (!user) {
+                console.error(`❌ User not found for cutout task ${task_id}`);
+                return;
+              }
+
+              const aiTask = await AiTask.findOne({ task_id });
+
+              const cutoutDoc = await Cutout.create({
+                user_id: task.user_id,
+                tenant_id: user.tenant_id,
+                task_id: task_id,
+                status: "completed",
+                name: aiTask?.name || `Cutouts for ${task_id}`,
+                message: rawResult?.message || null,
+                components: rawResult?.components || [],
+                metadata: rawResult?.metadata || {},
+                gallery_image_ids: aiTask?.gallery_image_ids || [],
+                fileHash: aiTask?.fileHash || [],
+                generation_source: "ai_generated",
+                market: aiTask?.meta?.market || null,
+                is_deleted: false,
+              });
+
+              console.log(`💾 Saved cutout entry for task ${task_id}`, cutoutDoc._id);
+
+            } catch (err) {
+              console.error(`❌ Error saving cutout entry for ${task_id}: ${err.message}`);
+            }
+          } else if (aiTaskType === TASK_TYPE.COLOR_ANALYSIS) {
+            try {
+              console.log(`🎨 Creating color analysis entry for task ${task_id}...`);
+
+              const user = await User.findById(task.user_id);
+              if (!user) {
+                console.error(`❌ User not found for color analysis task ${task_id}`);
+                return;
+              }
+
+              const aiTask = await AiTask.findOne({ task_id });
+
+              colorAnalysisDoc = await ColorAnalysis.create({
+                user_id: task.user_id,
+                tenant_id: user.tenant_id,
+                task_id: task_id,
+                task_type: "garment_color_analysis",
+                data: rawResult || {},
+                success: rawResult?.success ?? true,
+                gallery_image_ids: aiTask?.gallery_image_ids || [],
+              });
+
+              console.log(`💾 Saved color analysis entry for task ${task_id}`, colorAnalysisDoc._id);
+
+            } catch (err) {
+              console.error(`❌ Error saving color analysis entry for ${task_id}: ${err.message}`);
+            }
+          } else if (aiTaskType === TASK_TYPE.TECH_PACK) {
+            try {
+              console.log(`📦 Creating TechPack entry for task ${task_id}...`);
+              const user = await User.findById(task.user_id);
+              if (!user) {
+                console.error(`❌ User not found for TechPack task ${task_id}`);
+                return;
+              }
+
+              const aiTask = await AiTask.findOne({ task_id });
+
+              const techPackDoc = await TechPack.create({
+                user_id: task.user_id,
+                tenant_id: user.tenant_id,
+                task_id: task_id,
+                status: "completed",
+                analysis: rawResult?.analysis || {},
+                tech_pack: rawResult?.tech_pack || {},
+                gallery_image_ids: aiTask?.gallery_image_ids || [],
+                generation_source: "ai_generated",
+                meta: aiTask?.meta || {},
+              });
+
+              console.log(`💾 Saved TechPack entry for task ${task_id}`, techPackDoc._id);
+
+              io.to(task.user_id.toString()).emit("task_update", {
+                task_id,
+                status: "completed",
+                result: rawResult,
+                techPackId: techPackDoc._id,
+                gallery_image_ids: aiTask?.gallery_image_ids || [],
+                task: aiTask?.task || "tech_packs",
+              });
+
+              sendNotification(io, {
+                user_id: user.id,
+                type: "result_generated",
+                message: `Tech Pack generated successfully for ${task_id}`,
+              });
+            } catch (err) {
+              console.error(`❌ Error saving TechPack entry for ${task_id}: ${err.message}`);
+            }
+          }
+
+          console.log("💾 Updating DB with completed task...");
+          const aiTask = await AiTask.findOneAndUpdate(
+            { task_id },
+            {
+              status: "completed",
+              result: (isTypeSizeChart || task.task === "sketch_to_image" || aiTaskType === TASK_TYPE.PATTERN_CUTOUT || aiTaskType === TASK_TYPE.TECH_PACK)
+                ? []
+                : resultPaths,
+            },
+            {
+              new: true, // return the updated document
+            }
+          );
+
+          console.log(
+            "📢 Emitting socket event for completed task...", aiTask
+          );
+          let encryptedResults = [];
+          if (aiTaskType !== TASK_TYPE.PATTERN_CUTOUT && aiTaskType !== TASK_TYPE.COLOR_ANALYSIS && aiTaskType !== TASK_TYPE.TECH_PACK) {
+            encryptedResults = resultPaths.map(galleryService.encryptImagePath);
+          }
+          const encryptedSketchToImageArray = sketchToImageArray.map(item => ({
+            ...item,
+            url: item.url
+          }));
+
+          io.to(task.user_id.toString()).emit("task_update", {
+            task_id: task.task_id,
+            status: "completed",
+            result: isTypeSizeChart
+              ? []
+              : task.task === "sketch_to_image"
+                ? encryptedSketchToImageArray
+                : task.task === TASK_TYPE.PATTERN_CUTOUT || task.task === TASK_TYPE.TECH_PACK
+                  ? rawResult || {}
+                  : aiTaskType === TASK_TYPE.COLOR_ANALYSIS ?
+                    colorAnalysisDoc
+                    : encryptedResults,
+            measurements: hasMeasurementData
+              ? rawResult.data.measurements
+              : null,
+            grading_rules: gradingData
+              ? rawResult.grading_rules
+              : null,
+            tolerance: toleranceData
+              ? rawResult.tolerance
+              : null,
+            size_conversion: internationalSizeData
+              ? rawResult.size_conversion
+              : null,
+            sizeChartId: sizeSchemaId,
+            aiTaskId: aiTask._id,
+            gallery_image_ids: aiTask?.gallery_image_ids?.length > 0 ? aiTask?.gallery_image_ids : [],
+            market: aiTask?.meta?.market || null,
+            unit: aiTask?.meta?.unit || null,
+            task: aiTask?.task || null
+          });
+          sendNotification(io, { user_id: user.id, type: "result_generated", message: `Result generated for task ${MODULE_NAME[task.task] || task.task}` })
+        } else if (status === "failed" || status === "error") {
+          console.log(
+            `❌ Task ${task_id} failed with status: ${status}`,
+          );
+
+          await AiTask.updateOne(
+            { task_id: task.task_id },
+            { status: "failed" },
+          );
+
+          console.log("📢 Emitting socket event for failed task...");
+          io.to(task.user_id.toString()).emit("task_update", {
+            task_id: task.task_id,
+            status: "failed",
+          });
+
+          console.log("🚨 Handling image variation failure...");
+          await handleImageVariationFailure(task.user_id, global.io);
+        } else {
+          // console.log(
+          //     `⏳ Task ${task_id} is still in status: ${status}`,
+          // );
         }
-    }, 3000); // runs every 3 seconds
+      }
+    } catch (error) {
+      console.log(error, 'error')
+      console.error("❌ Error in task polling:", error.message);
+    } finally {
+      // Reset flag when polling completes (success or error)
+      isPollingRunning = false;
+    }
+  }, 3000); // runs every 3 seconds
 };
 
 
 
 export const completedTasks = asyncHandler(async (req, res) => {
-    const task_id = req.params.id;
-    const task = await AiTask.findOne({ task_id });
+  const task_id = req.params.id;
+  const task = await AiTask.findOne({ task_id });
 
-    if (!task) {
-        return sendResponse(res, {
-            statusCode: 202,
-            message: "Task is still being created",
-        });
-    }
-
-    if (task.status === "failed") {
-        return sendResponse(res, {
-            statusCode: 400,
-            message: "Image processing failed",
-            data: { status: "failed" },
-        });
-    }
-
-    if (task.status !== "completed") {
-        return sendResponse(res, {
-            statusCode: 202,
-            message: "Task is not completed yet",
-        });
-    }
-
-    sendResponse(res, {
-        statusCode: 200,
-        message: "Task completed 121 successfully",
-        data: task,
-        status: "completed",
+  if (!task) {
+    return sendResponse(res, {
+      statusCode: 202,
+      message: "Task is still being created",
     });
+  }
+
+  if (task.status === "failed") {
+    return sendResponse(res, {
+      statusCode: 400,
+      message: "Image processing failed",
+      data: { status: "failed" },
+    });
+  }
+
+  if (task.status !== "completed") {
+    return sendResponse(res, {
+      statusCode: 202,
+      message: "Task is not completed yet",
+    });
+  }
+
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Task completed 121 successfully",
+    data: task,
+    status: "completed",
+  });
 });
 
 export const fetchMeasurementPoint = asyncHandler(async (req, res) => {
-    const { garment_type } = req.body;
+  const { garment_type } = req.body;
 
-    const url = `${process.env.AI_URL}/enhanced/measurement-points?garment_type=${encodeURIComponent(garment_type)}`;
+  const url = `${process.env.AI_URL}/enhanced/measurement-points?garment_type=${encodeURIComponent(garment_type)}`;
 
-    const response = await axios.get(url);
+  const response = await axios.get(url);
 
-    sendResponse(res, {
-        statusCode: 200,
-        message: "Measurement point fetched successfully",
-        data: response.data,
-    });
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Measurement point fetched successfully",
+    data: response.data,
+  });
 });
 export const fetchTaskStatus = asyncHandler(async (req, res) => {
-    const { task_id } = req.body;
-    const url = `${process.env.AI_URL}/task/status/${task_id}`;
+  const { task_id } = req.body;
+  const url = `${process.env.AI_URL}/task/status/${task_id}`;
 
-    const response = await axios.get(url);
+  const response = await axios.get(url);
 
-    sendResponse(res, {
-        statusCode: 200,
-        message: "Measurement point fetched successfully",
-        data: response.data,
-    });
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Measurement point fetched successfully",
+    data: response.data,
+  });
 });
 
 export const generateSizeChartAndImage = asyncHandler(async (req, res) => {
-    const {
-        garment_type,
-        image_url,
-        task_id,
-        image_status,
-        market,
-        unit,
-        custom_size_range,
-        include_grading,
-        include_tolerance,
-        include_conversion,
-        confirmation,
-        galleryImageId,
-        generatedImageUrl,
-        tolerance_chest,
-        tolerance_waist,
-        tolerance_hip,
-        tolerance_length,
-        tolerance_sleeve,
-        tolerance_inseam,
-    } = req.body;
+  const {
+    garment_type,
+    image_url,
+    task_id,
+    image_status,
+    market,
+    unit,
+    custom_size_range,
+    include_grading,
+    include_tolerance,
+    include_conversion,
+    confirmation,
+    galleryImageId,
+    generatedImageUrl,
+    tolerance_chest,
+    tolerance_waist,
+    tolerance_hip,
+    tolerance_length,
+    tolerance_sleeve,
+    tolerance_inseam,
+  } = req.body;
 
-    // Validate confirmation value if provided
-    if (confirmation && confirmation !== "keepCopy" && confirmation !== "replace") {
-        return sendResponse(res, {
-            statusCode: 400,
-            message: "Invalid confirmation value. It should be either 'keepCopy' or 'replace'.",
-        });
-    }
-
-    // ✅ Use common function to resolve image source
-    const { stream, filename, filePath } = await getImageStream({
-        galleryImageId,
-        generatedImageUrl,
-        file: req.file,
+  // Validate confirmation value if provided
+  if (confirmation && confirmation !== "keepCopy" && confirmation !== "replace") {
+    return sendResponse(res, {
+      statusCode: 400,
+      message: "Invalid confirmation value. It should be either 'keepCopy' or 'replace'.",
     });
+  }
 
-    // ✅ Compute MD5 hash of the uploaded file's binary data
-    const fileHash = await generateFileHash(filePath);
-    console.log("filehash101>>>>>>", fileHash)
+  // ✅ Use common function to resolve image source
+  const { stream, filename, filePath } = await getImageStream({
+    galleryImageId,
+    generatedImageUrl,
+    file: req.file,
+  });
+
+  // ✅ Compute MD5 hash of the uploaded file's binary data
+  const fileHash = await generateFileHash(filePath);
+  console.log("filehash101>>>>>>", fileHash)
 
 
-    // // ✅ Check if an AiTask already exists with this hash
-    // const existingTasks = await sizeChartSchema.find({ fileHash: fileHash });
+  // // ✅ Check if an AiTask already exists with this hash
+  // const existingTasks = await sizeChartSchema.find({ fileHash: fileHash });
 
-    // ✅ Check if a SizeChart already exists with this hash and tenant
-    let existingTasks = await sizeChartSchema.find({
-        fileHash: fileHash,
-        $or: [
-            { tenant_id: req.user.tenant_id }, // new data with tenant_id
-            { tenant_id: { $exists: false } }, // old data with no tenant_id
-            { tenant_id: null } // explicitly null
-        ]
-    }).populate("user_id", "tenant_id");
+  // ✅ Check if a SizeChart already exists with this hash and tenant
+  let existingTasks = await sizeChartSchema.find({
+    fileHash: fileHash,
+    $or: [
+      { tenant_id: req.user.tenant_id }, // new data with tenant_id
+      { tenant_id: { $exists: false } }, // old data with no tenant_id
+      { tenant_id: null } // explicitly null
+    ]
+  }).populate("user_id", "tenant_id");
 
-    // ✅ Normalize: for old records, derive tenant_id from user
-    existingTasks = existingTasks.filter(task => {
+  // ✅ Normalize: for old records, derive tenant_id from user
+  existingTasks = existingTasks.filter(task => {
     if (task.tenant_id) {
-        return task.tenant_id.toString() === req.user.tenant_id.toString();
+      return task.tenant_id.toString() === req.user.tenant_id.toString();
     }
     // fallback for old data: check user's tenant_id
     if (task.user_id && task.user_id.tenant_id) {
-        return task.user_id.tenant_id.toString() === req.user.tenant_id.toString();
+      return task.user_id.tenant_id.toString() === req.user.tenant_id.toString();
     }
     return false;
+  });
+
+  if (existingTasks.length > 0 && !confirmation) {
+    return sendResponse(res, {
+      statusCode: 409,
+      message: "This image has already been used for a size chart generation task.Please confirm if you want to replace or keep the copy?",
+      data: existingTasks,
     });
+  }
+  console.log(image_status, 'image_statusimage_status');
 
-    if (existingTasks.length > 0 && !confirmation) {
-        return sendResponse(res, {
-            statusCode: 409,
-            message: "This image has already been used for a size chart generation task.Please confirm if you want to replace or keep the copy?",
-            data: existingTasks,
-        });
-    }
-console.log(image_status, 'image_statusimage_status');
-
-    // ✅ Save to Gallery
-   let galleryImage;
-    if (image_status === "saved" || image_status === "finalized" || image_status === "uploaded") {
-        galleryImage = await GalleryImage.findOne({
-            _id: task_id,
-            user_id: req.user.id,
-        });
-    } else if (generatedImageUrl) {
+  // ✅ Save to Gallery
+  let galleryImage;
+  if (image_status === "saved" || image_status === "finalized" || image_status === "uploaded") {
+    galleryImage = await GalleryImage.findOne({
+      _id: task_id,
+      user_id: req.user.id,
+    });
+  } else if (generatedImageUrl) {
     const encryptedId = generatedImageUrl.split("/").pop();
-    const decryptedUrl = galleryService.decryptImagePath(encryptedId); 
-    const aiTask = await AiTask.findOne({ result:decryptedUrl, user_id: req.user.id });
+    const decryptedUrl = galleryService.decryptImagePath(encryptedId);
+    const aiTask = await AiTask.findOne({ result: decryptedUrl, user_id: req.user.id });
 
     if (!aiTask) {
-        return sendResponse(res, {
-            statusCode: 404,
-            message: "AI task not found for this generated image.",
-        });
+      return sendResponse(res, {
+        statusCode: 404,
+        message: "AI task not found for this generated image.",
+      });
     }
-     aiTask.result = aiTask.result.filter((url) => url !== decryptedUrl);
+    aiTask.result = aiTask.result.filter((url) => url !== decryptedUrl);
     await aiTask.save();
 
     // ✅ Check if gallery image already exists for this url
     galleryImage = await GalleryImage.findOne({
-        url: decryptedUrl,
-        user_id: req.user.id,
+      url: decryptedUrl,
+      user_id: req.user.id,
     });
 
     if (galleryImage) {
-        galleryImage.status = "finalized";
-        await galleryImage.save();
-         await deductCredits({
-          tenantId:req.user.tenant_id,
-          userId:req.user.tenant_id,
-          creditsToDeduct: 1,
-        });
+      galleryImage.status = "finalized";
+      await galleryImage.save();
+      await deductCredits({
+        tenantId: req.user.tenant_id,
+        userId: req.user.tenant_id,
+        creditsToDeduct: 1,
+      });
     } else {
-        galleryImage = await GalleryImage.create({
-            url: decryptedUrl,
-            name: `Generated-${aiTask?.task_id}`,
-            status: "finalized",
-            tenant_id: req.user.tenant_id,
-            user_id: req.user.id,
-            fileHash,
-        });
-        await deductCredits({
-          tenantId:req.user.tenant_id,
-          userId:req.user.tenant_id,
-          creditsToDeduct: 1,
-        });
-    }
-    }else {
-        // ✅ Check if a gallery image already exists for this hash + tenant
-        galleryImage = await GalleryImage.findOne({
-            fileHash,
-            tenant_id: req.user.tenant_id,
-            user_id: req.user.id,
-        });
-
-        if (!galleryImage) {
-            galleryImage = await GalleryImage.create({
-            url: `${process.env.BASE_URL}/${req.file.path
-                .replace(/^public[\\/]/, "")
-                .replace(/\\/g, "/")}`,
-            name: req.file.originalname,
-            status: "uploaded",
-            tenant_id: req.user.tenant_id,
-            user_id: req.user.id,
-            task_id: task_id,
-            fileHash,
-            });
-        }
-    }
-
-    // ✅ Send image + data to AI service
-    const formData = new FormData();
-    formData.append("image", stream, { filename });
-    formData.append("garment_type", garment_type);
-    formData.append("market", market);
-    formData.append("unit", unit);
-    formData.append("custom_size_range", custom_size_range);
-    formData.append("include_grading", include_grading);
-    formData.append("include_tolerance", include_tolerance);
-    formData.append("include_conversion", include_conversion);
-formData.append("tolerance_chest", tolerance_chest ?? "");
-formData.append("tolerance_waist", tolerance_waist ?? "");
-formData.append("tolerance_hip", tolerance_hip ?? "");
-formData.append("tolerance_length", tolerance_length ?? "");
-formData.append("tolerance_sleeve", tolerance_sleeve ?? "");
-formData.append("tolerance_inseam", tolerance_inseam ?? "");
-
-
-    const response = await axios.post(
-        `${process.env.AI_URL}/enhanced/size-chart/async`,
-        formData,
-        { headers: formData.getHeaders() }
-    );
-
-    const taskId = response.data.task_id;
-
-    // ✅ Save the AI task along with the unique hash
-    const aiTask = await AiTask.create({
+      galleryImage = await GalleryImage.create({
+        url: decryptedUrl,
+        name: `Generated-${aiTask?.task_id}`,
+        status: "finalized",
+        tenant_id: req.user.tenant_id,
         user_id: req.user.id,
-        task: "size_chart",
-        task_id: taskId,
-        fileHash: [fileHash], // your schema defines it as an array, so store it like this
-        confirmation,
-        gallery_image_ids:[galleryImage._id],
-        meta: {
-            market,
-            unit
-        }
+        fileHash,
+      });
+      await deductCredits({
+        tenantId: req.user.tenant_id,
+        userId: req.user.tenant_id,
+        creditsToDeduct: 1,
+      });
+    }
+  } else {
+    // ✅ Check if a gallery image already exists for this hash + tenant
+    galleryImage = await GalleryImage.findOne({
+      fileHash,
+      tenant_id: req.user.tenant_id,
+      user_id: req.user.id,
     });
 
-    console.log('aiTAsk',aiTask)
-
-    sendResponse(res, {
-        statusCode: 200,
-        message: "Size chart and image generated successfully",
-        data: response.data,
-    });
-});
-export const getSizeChart = asyncHandler(async (req, res) => {
-    const { isSharedWithMe, isSharedWithOthers } = req.query;
-    const user_id = req.user.id;
-    const tenant_id = req.user.tenant_id;
-    const user_roles = req.user.roles;
-
-    let sizeCharts = [];
-
-    if (isSharedWithMe === 'true') {
-        // Get resources shared with this user
-        sizeCharts = await ResourceAccessService.getAccessibleResources(
-            "SizeChart",
-            user_id,
-            tenant_id,
-            user_roles,
-            { includeOwned: false, includeShared: true, permission: ["read"] }
-        );
-        console.log(sizeCharts, 'sizeChartssizeCharts');
-        
-    } else if (isSharedWithOthers === 'true') {
-        // Get resources shared by this user
-        sizeCharts = await ResourceAccessService.getResourcesSharedWithOthers(
-            "SizeChart",
-            user_id,
-            { permission: ["read"] }
-        );
-    } else {
-        // Fetch only the user's own size charts
-        sizeCharts = await sizeChartSchema.find({ user_id }).sort({ created_at: -1 }).lean();
+    if (!galleryImage) {
+      galleryImage = await GalleryImage.create({
+        url: `${process.env.BASE_URL}/${req.file.path
+          .replace(/^public[\\/]/, "")
+          .replace(/\\/g, "/")}`,
+        name: req.file.originalname,
+        status: "uploaded",
+        tenant_id: req.user.tenant_id,
+        user_id: req.user.id,
+        task_id: task_id,
+        fileHash,
+      });
     }
-
-    if (!sizeCharts || sizeCharts.length === 0) {
-        return sendResponse(res, {
-            statusCode: 404,
-            message: "Size chart not found",
-        });
-    }
-
-    const sizeOrder = ['xs', 's', 'm', 'l', 'xl', 'xxl', 'xxxl', '2xl', '3xl', '4xl', '5xl'];
-
-    const sortMeasurements = (measurements) => {
-        const sortedMeasurements = {};
-        Object.keys(measurements).forEach(measurementKey => {
-            const measurementData = measurements[measurementKey];
-            const sortedSizes = {};
-
-            // Add sizes in defined order
-            sizeOrder.forEach(size => {
-                const actualKey = Object.keys(measurementData).find(
-                    key => key.toLowerCase() === size.toLowerCase()
-                );
-                if (actualKey) sortedSizes[actualKey] = measurementData[actualKey];
-            });
-
-            // Add remaining sizes
-            Object.keys(measurementData).forEach(size => {
-                if (!sortedSizes.hasOwnProperty(size)) sortedSizes[size] = measurementData[size];
-            });
-
-            sortedMeasurements[measurementKey] = sortedSizes;
-        });
-        return sortedMeasurements;
-    };
-
-    const sortedSizeCharts = sizeCharts.map(chart => {
-  // Sort the measurements if they exist
-  if (chart.measurements) {
-    chart.measurements = sortMeasurements(chart.measurements);
   }
 
-  // Make sure the chart ID is _id
-  return {
-    ...chart,
-    id: chart._id, // fallback in case _id is missing
-  };
-});
+  // ✅ Send image + data to AI service
+  const formData = new FormData();
+  formData.append("image", stream, { filename });
+  formData.append("garment_type", garment_type);
+  formData.append("market", market);
+  formData.append("unit", unit);
+  formData.append("custom_size_range", custom_size_range);
+  formData.append("include_grading", include_grading);
+  formData.append("include_tolerance", include_tolerance);
+  formData.append("include_conversion", include_conversion);
+  formData.append("tolerance_chest", tolerance_chest ?? "");
+  formData.append("tolerance_waist", tolerance_waist ?? "");
+  formData.append("tolerance_hip", tolerance_hip ?? "");
+  formData.append("tolerance_length", tolerance_length ?? "");
+  formData.append("tolerance_sleeve", tolerance_sleeve ?? "");
+  formData.append("tolerance_inseam", tolerance_inseam ?? "");
 
-    sendResponse(res, {
-        statusCode: 200,
-        message: "Size chart fetched successfully",
-        data: sortedSizeCharts,
+
+  const response = await axios.post(
+    `${process.env.AI_URL}/enhanced/size-chart/async`,
+    formData,
+    { headers: formData.getHeaders() }
+  );
+
+  const taskId = response.data.task_id;
+
+  // ✅ Save the AI task along with the unique hash
+  const aiTask = await AiTask.create({
+    user_id: req.user.id,
+    task: "size_chart",
+    task_id: taskId,
+    fileHash: [fileHash], // your schema defines it as an array, so store it like this
+    confirmation,
+    gallery_image_ids: [galleryImage._id],
+    meta: {
+      market,
+      unit
+    }
+  });
+
+  console.log('aiTAsk', aiTask)
+
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Size chart and image generated successfully",
+    data: response.data,
+  });
+});
+export const getSizeChart = asyncHandler(async (req, res) => {
+  const { isSharedWithMe, isSharedWithOthers } = req.query;
+  const user_id = req.user.id;
+  const tenant_id = req.user.tenant_id;
+  const user_roles = req.user.roles;
+
+  let sizeCharts = [];
+
+  if (isSharedWithMe === 'true') {
+    // Get resources shared with this user
+    sizeCharts = await ResourceAccessService.getAccessibleResources(
+      "SizeChart",
+      user_id,
+      tenant_id,
+      user_roles,
+      { includeOwned: false, includeShared: true, permission: ["read"] }
+    );
+    console.log(sizeCharts, 'sizeChartssizeCharts');
+
+  } else if (isSharedWithOthers === 'true') {
+    // Get resources shared by this user
+    sizeCharts = await ResourceAccessService.getResourcesSharedWithOthers(
+      "SizeChart",
+      user_id,
+      { permission: ["read"] }
+    );
+  } else {
+    // Fetch only the user's own size charts
+    sizeCharts = await sizeChartSchema.find({ user_id }).sort({ created_at: -1 }).lean();
+  }
+
+  if (!sizeCharts || sizeCharts.length === 0) {
+    return sendResponse(res, {
+      statusCode: 404,
+      message: "Size chart not found",
     });
+  }
+
+  const sizeOrder = ['xs', 's', 'm', 'l', 'xl', 'xxl', 'xxxl', '2xl', '3xl', '4xl', '5xl'];
+
+  const sortMeasurements = (measurements) => {
+    const sortedMeasurements = {};
+    Object.keys(measurements).forEach(measurementKey => {
+      const measurementData = measurements[measurementKey];
+      const sortedSizes = {};
+
+      // Add sizes in defined order
+      sizeOrder.forEach(size => {
+        const actualKey = Object.keys(measurementData).find(
+          key => key.toLowerCase() === size.toLowerCase()
+        );
+        if (actualKey) sortedSizes[actualKey] = measurementData[actualKey];
+      });
+
+      // Add remaining sizes
+      Object.keys(measurementData).forEach(size => {
+        if (!sortedSizes.hasOwnProperty(size)) sortedSizes[size] = measurementData[size];
+      });
+
+      sortedMeasurements[measurementKey] = sortedSizes;
+    });
+    return sortedMeasurements;
+  };
+
+  const sortedSizeCharts = sizeCharts.map(chart => {
+    // Sort the measurements if they exist
+    if (chart.measurements) {
+      chart.measurements = sortMeasurements(chart.measurements);
+    }
+
+    // Make sure the chart ID is _id
+    return {
+      ...chart,
+      id: chart._id, // fallback in case _id is missing
+    };
+  });
+
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Size chart fetched successfully",
+    data: sortedSizeCharts,
+  });
 });
 
 // export const updateSizeChart = asyncHandler(async (req, res) => {
@@ -2822,7 +2822,7 @@ export const updateSizeChart = asyncHandler(async (req, res) => {
   const file = req.file;
   const user = req.user;
 
-const hasAccess = await ResourceAccessService.hasAccess(
+  const hasAccess = await ResourceAccessService.hasAccess(
     "SizeChart",
     sizeChartId,
     req.user.id,
@@ -2839,7 +2839,7 @@ const hasAccess = await ResourceAccessService.hasAccess(
   }
 
   // Parse measurements if it's a JSON string
-   const parseJSON = (data) => {
+  const parseJSON = (data) => {
     if (!data) return undefined;
     if (typeof data === "string") {
       try {
@@ -2960,106 +2960,106 @@ const hasAccess = await ResourceAccessService.hasAccess(
 
 
 export const getLatestUnseenTask = asyncHandler(async (req, res) => {
-    const user_id = req?.user?.id;
-    const task_type = req?.body?.task_type;
+  const user_id = req?.user?.id;
+  const task_type = req?.body?.task_type;
 
-    if (!task_type) {
-        return sendResponse(res, {
-            statusCode: 400,
-            message: "Task type is required",
-        });
-    }
-
-    const latestTask = await AiTask.findOne({
-        user_id,
-        hasSeen: false,
-        task: task_type,
-    }).sort({ createdAt: -1 });
-
-    let sizeChartData = null;
-    let patternCutout = null;
-    let colorAnalysis = null;
-    let techPackData = null;
-    if (task_type === "size_chart") {
-        sizeChartData = await sizeChartSchema.findOne({
-            user_id,
-            // status: { $in: ["completed", "failed","queued"] },
-            status: { $in: ["completed", "failed"] },
-            task_id: latestTask?.task_id,
-        });
-
-        // // Override image result in latestTask if image found
-        // if (sizeChartData?.results?.length) {
-        //     latestTask.result = sizeChartData.results;
-        // }
-    }else if(task_type === 'pattern_cutout'){
-      patternCutout = await Cutout.findOne({
-            user_id,
-            status: { $in: ["completed", "failed"] },
-            task_id: latestTask?.task_id,
-      }).populate("gallery_image_ids")
-    }else if(task_type === 'color_analysis'){
-      colorAnalysis = await ColorAnalysis.findOne({
-            user_id,
-            success: true,
-            task_id: latestTask?.task_id,
-      }).populate("gallery_image_ids")
-    }else if (task_type === "tech_packs") {
-        // Fetch TechPack document
-        techPackData = await TechPack.findOne({
-            user_id,
-            status: { $in: ["completed", "failed"] },
-            task_id: latestTask?.task_id,
-        });
-
-        // Optionally override result with tech pack data
-        if (techPackData) {
-            latestTask.result = {
-                analysis: techPackData.analysis || {},
-                tech_pack: techPackData.tech_pack || {}
-            };
-        }
-    }
-
-    if (task_type === "sketch_to_image" && latestTask ) {
-        const galleryImages = await GalleryImage.find({ 
-        task_id: latestTask.task_id,
-        user_id: user_id
-        });
-        latestTask.result = galleryImages.map(image=>image.url);
-    }
-
-    if (!latestTask) {
-        return sendResponse(res, {
-            statusCode: 200,
-            message: "No unseen tasks found",
-        });
-    }
-    // Encrypt image URLs
-      if (Array.isArray(latestTask.result) && task_type !== "sketch_to_image") {
-        latestTask.result = latestTask.result.map((url) =>
-            galleryService.encryptImagePath(url)
-        );
-    }
-
-    let responseData = { latestTask };
-    if (sizeChartData) {
-      responseData.sizeChartData = sizeChartData;
-    }
-    if (patternCutout) {
-      responseData.patternCutout = patternCutout;
-    }
-    if(colorAnalysis){
-      responseData.colorAnalysis = colorAnalysis;
-    }
-    if(techPackData) {
-      responseData.techPackData = techPackData;
-    }
-    sendResponse(res, {
-      statusCode: 200,
-      message: "Latest unseen task fetched successfully",
-      data: responseData,
+  if (!task_type) {
+    return sendResponse(res, {
+      statusCode: 400,
+      message: "Task type is required",
     });
+  }
+
+  const latestTask = await AiTask.findOne({
+    user_id,
+    hasSeen: false,
+    task: task_type,
+  }).sort({ createdAt: -1 });
+
+  let sizeChartData = null;
+  let patternCutout = null;
+  let colorAnalysis = null;
+  let techPackData = null;
+  if (task_type === "size_chart") {
+    sizeChartData = await sizeChartSchema.findOne({
+      user_id,
+      // status: { $in: ["completed", "failed","queued"] },
+      status: { $in: ["completed", "failed"] },
+      task_id: latestTask?.task_id,
+    });
+
+    // // Override image result in latestTask if image found
+    // if (sizeChartData?.results?.length) {
+    //     latestTask.result = sizeChartData.results;
+    // }
+  } else if (task_type === 'pattern_cutout') {
+    patternCutout = await Cutout.findOne({
+      user_id,
+      status: { $in: ["completed", "failed"] },
+      task_id: latestTask?.task_id,
+    }).populate("gallery_image_ids")
+  } else if (task_type === 'color_analysis') {
+    colorAnalysis = await ColorAnalysis.findOne({
+      user_id,
+      success: true,
+      task_id: latestTask?.task_id,
+    }).populate("gallery_image_ids")
+  } else if (task_type === "tech_packs") {
+    // Fetch TechPack document
+    techPackData = await TechPack.findOne({
+      user_id,
+      status: { $in: ["completed", "failed"] },
+      task_id: latestTask?.task_id,
+    });
+
+    // Optionally override result with tech pack data
+    if (techPackData) {
+      latestTask.result = {
+        analysis: techPackData.analysis || {},
+        tech_pack: techPackData.tech_pack || {}
+      };
+    }
+  }
+
+  if (task_type === "sketch_to_image" && latestTask) {
+    const galleryImages = await GalleryImage.find({
+      task_id: latestTask.task_id,
+      user_id: user_id
+    });
+    latestTask.result = galleryImages.map(image => image.url);
+  }
+
+  if (!latestTask) {
+    return sendResponse(res, {
+      statusCode: 200,
+      message: "No unseen tasks found",
+    });
+  }
+  // Encrypt image URLs
+  if (Array.isArray(latestTask.result) && task_type !== "sketch_to_image") {
+    latestTask.result = latestTask.result.map((url) =>
+      galleryService.encryptImagePath(url)
+    );
+  }
+
+  let responseData = { latestTask };
+  if (sizeChartData) {
+    responseData.sizeChartData = sizeChartData;
+  }
+  if (patternCutout) {
+    responseData.patternCutout = patternCutout;
+  }
+  if (colorAnalysis) {
+    responseData.colorAnalysis = colorAnalysis;
+  }
+  if (techPackData) {
+    responseData.techPackData = techPackData;
+  }
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Latest unseen task fetched successfully",
+    data: responseData,
+  });
 });
 
 
@@ -3067,7 +3067,7 @@ export const getLatestUnseenTask = asyncHandler(async (req, res) => {
 
 export const getCutouts = asyncHandler(async (req, res) => {
   const user_id = req.user.id;
-  
+
   // ✅ Extract pagination parameters from query
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 12;
@@ -3296,7 +3296,7 @@ export const getTechpackById = asyncHandler(async (req, res) => {
 // Helper function to clean up uploaded files on error
 const cleanupUploadedFiles = async (files) => {
   if (!files) return;
-  
+
   try {
     // Clean up image files
     if (files.image) {
@@ -3304,7 +3304,7 @@ const cleanupUploadedFiles = async (files) => {
         await deleteFileFromStorage(file.path);
       }
     }
-    
+
     // Clean up additional files
     if (files.files) {
       for (const file of files.files) {
@@ -3339,7 +3339,7 @@ export const createManualTechPack = asyncHandler(async (req, res) => {
     if (!task_id || !tech_pack) {
       // Clean up uploaded files if validation fails
       await cleanupUploadedFiles(req.files);
-      
+
       return sendResponse(res, {
         statusCode: 400,
         message: "Task ID and tech pack data are required",
@@ -3351,7 +3351,7 @@ export const createManualTechPack = asyncHandler(async (req, res) => {
     if (existingTechPack) {
       // Clean up uploaded files if tech pack already exists
       await cleanupUploadedFiles(req.files);
-      
+
       return sendResponse(res, {
         statusCode: 400,
         message: "Tech pack with this task ID already exists",
@@ -3370,10 +3370,10 @@ export const createManualTechPack = asyncHandler(async (req, res) => {
         const response = await axios.get(projectImageUrl, {
           responseType: 'stream'
         });
-        
+
         stream = response.data;
         filename = projectImageUrl.split('/').pop() || 'project-image.jpg';
-        
+
         galleryImage = await GalleryImage.create({
           url: projectImageUrl,
           name: filename,
@@ -3382,7 +3382,7 @@ export const createManualTechPack = asyncHandler(async (req, res) => {
           user_id: user_id,
           project_image_id: projectImageId || null,
         });
-        
+
       } catch (error) {
         console.error("Error fetching project image:", error);
         await cleanupUploadedFiles(req.files);
@@ -3398,7 +3398,7 @@ export const createManualTechPack = asyncHandler(async (req, res) => {
         generatedImageUrl,
         file: imageFile,
       });
-      
+
       stream = imageData.stream;
       filename = imageData.filename;
       fileHash = imageData.fileHash;
@@ -3489,7 +3489,7 @@ export const createManualTechPack = asyncHandler(async (req, res) => {
           supplier: tech_pack.suggested_fabrics_and_trims?.main_fabric?.supplier || ""
         },
         secondary_fabrics: [],
-        trims: tech_pack.suggested_fabrics_and_trims?.trims?.map(trim => 
+        trims: tech_pack.suggested_fabrics_and_trims?.trims?.map(trim =>
           typeof trim === 'string' ? { name: trim, description: trim } : trim
         ) || []
       },
@@ -3566,7 +3566,7 @@ export const createManualTechPack = asyncHandler(async (req, res) => {
       for (const file of req.files.files) {
         const fileUrl = generateFileUrl(file.path, process.env.BASE_URL);
         const fileCategory = getFileCategory(file.mimetype);
-        
+
         const fileData = {
           file_url: fileUrl,
           file_name: file.originalname,
@@ -3578,9 +3578,9 @@ export const createManualTechPack = asyncHandler(async (req, res) => {
           uploaded_at: new Date(),
           metadata: getFileMetadata(file),
         };
-        
+
         uploadedFiles.push(fileData);
-        
+
         console.log(`[TechPack] File prepared for upload: ${file.originalname}`);
       }
     }
@@ -3686,10 +3686,10 @@ export const createManualTechPack = asyncHandler(async (req, res) => {
 
   } catch (error) {
     console.error("Error creating manual tech pack:", error);
-    
+
     // Clean up uploaded files on error
     await cleanupUploadedFiles(req.files);
-    
+
     return sendResponse(res, {
       statusCode: 500,
       message: "Failed to create tech pack",
@@ -3775,7 +3775,7 @@ export const duplicateTechPack = asyncHandler(async (req, res) => {
 
     // Duplicate notes if they exist
     const duplicatedNoteIds = [];
-    
+
     if (originalTechPack.notes && originalTechPack.notes.length > 0) {
       for (const originalNote of originalTechPack.notes) {
         try {
@@ -3875,7 +3875,7 @@ export const updateManualTechPack = asyncHandler(async (req, res) => {
   try {
     // Direct access to body since it's JSON
     console.log('Request body:', req.body);
-    
+
     const {
       task_id,
       status,
@@ -3902,11 +3902,11 @@ export const updateManualTechPack = asyncHandler(async (req, res) => {
 
     // Check if task_id is being changed and if it already exists
     if (task_id !== existingTechPack.task_id) {
-      const duplicateTechPack = await TechPack.findOne({ 
+      const duplicateTechPack = await TechPack.findOne({
         task_id,
         _id: { $ne: techPackId }
       });
-      
+
       if (duplicateTechPack) {
         return sendResponse(res, {
           statusCode: 400,
@@ -3940,7 +3940,7 @@ export const updateManualTechPack = asyncHandler(async (req, res) => {
           supplier: tech_pack.suggested_fabrics_and_trims?.main_fabric?.supplier || ""
         },
         secondary_fabrics: tech_pack.suggested_fabrics_and_trims?.secondary_fabrics || [],
-        trims: tech_pack.suggested_fabrics_and_trims?.trims?.map(trim => 
+        trims: tech_pack.suggested_fabrics_and_trims?.trims?.map(trim =>
           typeof trim === 'string' ? { name: trim, description: trim } : trim
         ) || []
       },
@@ -3996,16 +3996,16 @@ export const updateManualTechPack = asyncHandler(async (req, res) => {
     // Handle notes update
     if (notes && notes.length > 0) {
       console.log('Processing notes:', JSON.stringify(notes, null, 2));
-      
+
       // Delete existing notes
       await Note.deleteMany({ techpack_id: techPackId });
-      
+
       const createdNotes = [];
 
       for (const noteData of notes) {
         try {
           console.log(`Processing note of type: ${noteData.type}`);
-          
+
           // Transform items based on note type
           let transformedItems = [];
 
@@ -4100,42 +4100,42 @@ export const updateManualTechPack = asyncHandler(async (req, res) => {
 });
 
 export const markTasksAsSeen = asyncHandler(async (req, res) => {
-    const { task_id } = req.body; // string or array
+  const { task_id } = req.body; // string or array
 
-    if (!task_id || (Array.isArray(task_id) && task_id.length === 0)) {
-        return sendResponse(res, {
-            statusCode: 400,
-            message: "No task IDs provided",
-        });
-    }
-
-    const idsToUpdate = Array.isArray(task_id) ? task_id : [task_id];
-    const firstTask = await AiTask.findOne({ task_id: idsToUpdate[0] });
-
-    if (!firstTask) {
-        return sendResponse(res, {
-            statusCode: 404,
-            message: "Task not found",
-        });
-    }
-
-    const { user_id, task } = firstTask;
-
-    const result = await AiTask.updateMany(
-        { user_id, task },
-        { hasSeen: true }
-    );
-
+  if (!task_id || (Array.isArray(task_id) && task_id.length === 0)) {
     return sendResponse(res, {
-        statusCode: 200,
-        message: `${result.modifiedCount} '${task}' task(s) marked as seen for this user`,
+      statusCode: 400,
+      message: "No task IDs provided",
     });
+  }
+
+  const idsToUpdate = Array.isArray(task_id) ? task_id : [task_id];
+  const firstTask = await AiTask.findOne({ task_id: idsToUpdate[0] });
+
+  if (!firstTask) {
+    return sendResponse(res, {
+      statusCode: 404,
+      message: "Task not found",
+    });
+  }
+
+  const { user_id, task } = firstTask;
+
+  const result = await AiTask.updateMany(
+    { user_id, task },
+    { hasSeen: true }
+  );
+
+  return sendResponse(res, {
+    statusCode: 200,
+    message: `${result.modifiedCount} '${task}' task(s) marked as seen for this user`,
+  });
 });
 
 export const submitReview = asyncHandler(async (req, res) => {
   try {
-    const {improvement,liked_about_app,price_option} = req.body;
-     const user = await User.findById(req.user.id)
+    const { improvement, liked_about_app, price_option } = req.body;
+    const user = await User.findById(req.user.id)
       .populate("tenant_id")
       .exec();
     let credit = await UserCredits.findOne({ user_id: req.user.id });
@@ -4146,91 +4146,91 @@ export const submitReview = asyncHandler(async (req, res) => {
       });
       await credit.save();
     }
-     console.log(user,'user')
+    console.log(user, 'user')
 
-      const response = await axios.post(
-    `${process.env.STRAPI_URL}/api/feedbacks`,
-    {
+    const response = await axios.post(
+      `${process.env.STRAPI_URL}/api/feedbacks`,
+      {
         data: {
-        improvement,
-        liked_about_app,
-        price_option,
-        user_email: user.email,
-        user_signup_date: new Date(user.created_at).toLocaleString("en-IN", {
+          improvement,
+          liked_about_app,
+          price_option,
+          user_email: user.email,
+          user_signup_date: new Date(user.created_at).toLocaleString("en-IN", {
             timeZone: "Asia/Kolkata",
             year: "numeric",
             month: "short",
             day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
-        }),
-        feedback_date: new Date().toLocaleString("en-IN", {
+          }),
+          feedback_date: new Date().toLocaleString("en-IN", {
             timeZone: "Asia/Kolkata",
             year: "numeric",
             month: "short",
             day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
-        }),
-        credits_used_till_now: credit.credits_used || 0,
-        size_charts_created_till_now: credit.sizeChartGenerated || 0,
-        tenant: user.tenant_id?.name || "N/A",
-        user_name: user.full_name,
+          }),
+          credits_used_till_now: credit.credits_used || 0,
+          size_charts_created_till_now: credit.sizeChartGenerated || 0,
+          tenant: user.tenant_id?.name || "N/A",
+          user_name: user.full_name,
         }
-        
 
-    },
-    {
+
+      },
+      {
         headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}` // from logged-in user
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}` // from logged-in user
         }
-    }
+      }
 
     );
-    console.log(response.status,"stasta")
-    if(response.status === 201){
-        credit.creditUsedSinceLastReview = 0;
-        credit.sizeChartsSinceLastReview = 0;
-        await credit.save()
-        
-        try {
-            await sendFeedbackReceivedEmail(user, {
-                user_email: user.email,
-                feedback_date: new Date().toLocaleString("en-IN", {
-                    timeZone: "Asia/Kolkata",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                }),
-            });
-        } catch (error) {
-            console.error("Failed to send feedback email:", error.message);
-        }
+    console.log(response.status, "stasta")
+    if (response.status === 201) {
+      credit.creditUsedSinceLastReview = 0;
+      credit.sizeChartsSinceLastReview = 0;
+      await credit.save()
 
-        
-        return sendResponse(res, {
-            statusCode: 200,
-            message: `feedback added for this user`,
+      try {
+        await sendFeedbackReceivedEmail(user, {
+          user_email: user.email,
+          feedback_date: new Date().toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
         });
+      } catch (error) {
+        console.error("Failed to send feedback email:", error.message);
+      }
+
+
+      return sendResponse(res, {
+        statusCode: 200,
+        message: `feedback added for this user`,
+      });
 
 
 
-    }else{
-         return sendResponse(res, {
-              statusCode: 500,
-              message: `Something went wrong`,
-          });
+    } else {
+      return sendResponse(res, {
+        statusCode: 500,
+        message: `Something went wrong`,
+      });
     }
   } catch (error) {
     console.log(error)
 
     return sendResponse(res, {
-          statusCode: 500,
-          message: error.response?.data?.error?.message || "Internal Server Error",
-      });
+      statusCode: 500,
+      message: error.response?.data?.error?.message || "Internal Server Error",
+    });
   }
 
 });
@@ -4302,33 +4302,33 @@ export const copySizeChartToGalleryImages = asyncHandler(async (req, res) => {
 
 // Abort Task
 export const abortTask = asyncHandler(async (req, res) => {
-    try {
-        const { taskId } = req.params;
+  try {
+    const { taskId } = req.params;
 
-        // Delete AiTask from DB
-        const deleted = await AiTask.findOneAndDelete({
-            task_id: taskId,
-            user_id: req.user.id,
-        });
+    // Delete AiTask from DB
+    const deleted = await AiTask.findOneAndDelete({
+      task_id: taskId,
+      user_id: req.user.id,
+    });
 
-        if (!deleted) {
-            return sendResponse(res, {
-                statusCode: 404,
-                message: "Task not found or already completed",
-            });
-        }
-
-        sendResponse(res, {
-            statusCode: 200,
-            message: "Task aborted successfully",
-        });
-    } catch (err) {
-        console.error("Abort error:", err);
-        sendResponse(res, {
-            statusCode: 500,
-            message: "Failed to abort task",
-        });
+    if (!deleted) {
+      return sendResponse(res, {
+        statusCode: 404,
+        message: "Task not found or already completed",
+      });
     }
+
+    sendResponse(res, {
+      statusCode: 200,
+      message: "Task aborted successfully",
+    });
+  } catch (err) {
+    console.error("Abort error:", err);
+    sendResponse(res, {
+      statusCode: 500,
+      message: "Failed to abort task",
+    });
+  }
 });
 
 
@@ -4350,31 +4350,31 @@ export const saveAsTemplate = asyncHandler(async (req, res) => {
     });
   }
 
-    // Helper: wipe values but keep keys
-    const wipeValues = (table, isNested = true) => {
-        if (!table || typeof table !== "object") return {};
-        const result = {};
-        
-        for (const [rowKey, row] of Object.entries(table)) {
-            if (isNested && typeof row === "object" && !Array.isArray(row)) {
-                // For nested objects like measurements
-                result[rowKey] = {};
-                for (const colKey of Object.keys(row)) {
-                result[rowKey][colKey] = ""; // clear value
-                }
-            } else {
-                // For flat objects like grading_rules and tolerance
-                result[rowKey] = ""; // clear value but keep key
-            }
+  // Helper: wipe values but keep keys
+  const wipeValues = (table, isNested = true) => {
+    if (!table || typeof table !== "object") return {};
+    const result = {};
+
+    for (const [rowKey, row] of Object.entries(table)) {
+      if (isNested && typeof row === "object" && !Array.isArray(row)) {
+        // For nested objects like measurements
+        result[rowKey] = {};
+        for (const colKey of Object.keys(row)) {
+          result[rowKey][colKey] = ""; // clear value
         }
-        return result;
-    };
+      } else {
+        // For flat objects like grading_rules and tolerance
+        result[rowKey] = ""; // clear value but keep key
+      }
+    }
+    return result;
+  };
 
 
   // Wipe all tables
-  const emptyMeasurements   = wipeValues(sizeChart.measurements);
-  const emptyGradingRules   = wipeValues(sizeChart.grading_rules);
-  const emptyTolerance      = wipeValues(sizeChart.tolerance);
+  const emptyMeasurements = wipeValues(sizeChart.measurements);
+  const emptyGradingRules = wipeValues(sizeChart.grading_rules);
+  const emptyTolerance = wipeValues(sizeChart.tolerance);
   const emptySizeConversion = wipeValues(sizeChart.size_conversion);
 
   // Create template
@@ -4401,131 +4401,131 @@ export const saveAsTemplate = asyncHandler(async (req, res) => {
 
 //Get templates
 export const getTemplates = asyncHandler(async (req, res) => {
-    const templates = await templateChartSchema.find({ tenant_id: req.user.tenant_id }).sort({ created_at: -1 });
-    sendResponse(res, {
-        statusCode: 200,
-        message: "Templates fetched successfully",
-        data: templates,
-    });
+  const templates = await templateChartSchema.find({ tenant_id: req.user.tenant_id }).sort({ created_at: -1 });
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Templates fetched successfully",
+    data: templates,
+  });
 });
 
 export const createSizeChartManually = asyncHandler(async (req, res) => {
-    let { measurements, grading_rules, tolerance, size_conversion, name, unit, market, generation_source } = req.body;
-    const file = req.file;
-    const user = req.user;
+  let { measurements, grading_rules, tolerance, size_conversion, name, unit, market, generation_source } = req.body;
+  const file = req.file;
+  const user = req.user;
 
-    // Parse possible JSON strings
-    const parseIfString = (val) => {
-        if (typeof val === "string") {
-        try { return JSON.parse(val); } catch { return {}; }
-        }
-        return val || {};
-    };
-
-    measurements = parseIfString(measurements);
-    grading_rules = parseIfString(grading_rules);
-    tolerance = parseIfString(tolerance);
-    size_conversion = parseIfString(size_conversion);
-
-    // ✅ Require at least one table
-    if (
-        Object.keys(measurements).length === 0 &&
-        Object.keys(grading_rules).length === 0 &&
-        Object.keys(tolerance).length === 0 &&
-        Object.keys(size_conversion).length === 0
-    ) {
-        return sendResponse(res, {
-        statusCode: 400,
-        message: "At least one table (measurements, grading_rules, tolerance, size_conversion) is required",
-        });
+  // Parse possible JSON strings
+  const parseIfString = (val) => {
+    if (typeof val === "string") {
+      try { return JSON.parse(val); } catch { return {}; }
     }
+    return val || {};
+  };
 
-    // Generate unique task_id
-    const taskId = new mongoose.Types.ObjectId().toString();
+  measurements = parseIfString(measurements);
+  grading_rules = parseIfString(grading_rules);
+  tolerance = parseIfString(tolerance);
+  size_conversion = parseIfString(size_conversion);
 
-    const createData = {
-        user_id: user.id,
-        tenant_id: user.tenant_id,
-        task_id: taskId,
-        status: "completed",
-        name: name || "Untitled Size Chart",
-        measurements,
-        grading_rules,
-        tolerance,
-        size_conversion,
-        unit,
-        market,
-        generation_source: "user_created",
-    };
-
-    // If user uploaded an image
-    if (file) {
-        try {
-        const hostUrl = process.env.BASE_URL;
-
-        const metadata = await sharp(file.path).metadata();
-        const { width, height } = metadata;
-
-        const maxDimension = Math.max(width, height);
-        const targetSize = 512;
-        const scaleRatio =
-            maxDimension > targetSize ? maxDimension / targetSize : 1;
-        const resizedWidth = Math.round(width / scaleRatio);
-        const resizedHeight = Math.round(height / scaleRatio);
-
-        const ext = path.extname(file.originalname);
-        const resizedFileName = `${path.basename(
-            file.originalname,
-            ext
-        )}_resized${ext}`;
-        const resizedFilePath = path.join("public/uploads/moodboards", resizedFileName);
-
-        const resizedBuffer = await sharp(file.path)
-            .resize(resizedWidth, resizedHeight, {
-            fit: "fill",
-            withoutEnlargement: true,
-            })
-            .jpeg({ quality: 85 })
-            .toBuffer();
-
-        await fspromise.writeFile(resizedFilePath, resizedBuffer);
-
-        const galleryImage = await GalleryImage.create({
-            url: `${hostUrl}/uploads/moodboards/${resizedFileName}`,
-            name: file.originalname,
-            description: "Size chart image",
-            status: "uploaded",
-            tenant_id: user.tenant_id,
-            user_id: user.id,
-            project_id: null,
-        });
-
-        // createData.gallery_image_id = galleryImage._id;
-        createData.gallery_image_ids = [galleryImage._id];
-
-        setTimeout(async () => {
-            try {
-            await fspromise.unlink(file.path);
-            } catch (err) {
-            console.warn("Failed to delete original image:", err.message);
-            }
-        }, 500);
-        } catch (error) {
-        console.error("Image processing error:", error);
-        return sendResponse(res, {
-            statusCode: 500,
-            message: "Image processing failed",
-        });
-        }
-    }
-
-    const newSizeChart = await sizeChartSchema.create(createData);
-
+  // ✅ Require at least one table
+  if (
+    Object.keys(measurements).length === 0 &&
+    Object.keys(grading_rules).length === 0 &&
+    Object.keys(tolerance).length === 0 &&
+    Object.keys(size_conversion).length === 0
+  ) {
     return sendResponse(res, {
-        statusCode: 201,
-        message: "Size chart created successfully",
-        data: newSizeChart,
+      statusCode: 400,
+      message: "At least one table (measurements, grading_rules, tolerance, size_conversion) is required",
     });
+  }
+
+  // Generate unique task_id
+  const taskId = new mongoose.Types.ObjectId().toString();
+
+  const createData = {
+    user_id: user.id,
+    tenant_id: user.tenant_id,
+    task_id: taskId,
+    status: "completed",
+    name: name || "Untitled Size Chart",
+    measurements,
+    grading_rules,
+    tolerance,
+    size_conversion,
+    unit,
+    market,
+    generation_source: "user_created",
+  };
+
+  // If user uploaded an image
+  if (file) {
+    try {
+      const hostUrl = process.env.BASE_URL;
+
+      const metadata = await sharp(file.path).metadata();
+      const { width, height } = metadata;
+
+      const maxDimension = Math.max(width, height);
+      const targetSize = 512;
+      const scaleRatio =
+        maxDimension > targetSize ? maxDimension / targetSize : 1;
+      const resizedWidth = Math.round(width / scaleRatio);
+      const resizedHeight = Math.round(height / scaleRatio);
+
+      const ext = path.extname(file.originalname);
+      const resizedFileName = `${path.basename(
+        file.originalname,
+        ext
+      )}_resized${ext}`;
+      const resizedFilePath = path.join("public/uploads/moodboards", resizedFileName);
+
+      const resizedBuffer = await sharp(file.path)
+        .resize(resizedWidth, resizedHeight, {
+          fit: "fill",
+          withoutEnlargement: true,
+        })
+        .jpeg({ quality: 85 })
+        .toBuffer();
+
+      await fspromise.writeFile(resizedFilePath, resizedBuffer);
+
+      const galleryImage = await GalleryImage.create({
+        url: `${hostUrl}/uploads/moodboards/${resizedFileName}`,
+        name: file.originalname,
+        description: "Size chart image",
+        status: "uploaded",
+        tenant_id: user.tenant_id,
+        user_id: user.id,
+        project_id: null,
+      });
+
+      // createData.gallery_image_id = galleryImage._id;
+      createData.gallery_image_ids = [galleryImage._id];
+
+      setTimeout(async () => {
+        try {
+          await fspromise.unlink(file.path);
+        } catch (err) {
+          console.warn("Failed to delete original image:", err.message);
+        }
+      }, 500);
+    } catch (error) {
+      console.error("Image processing error:", error);
+      return sendResponse(res, {
+        statusCode: 500,
+        message: "Image processing failed",
+      });
+    }
+  }
+
+  const newSizeChart = await sizeChartSchema.create(createData);
+
+  return sendResponse(res, {
+    statusCode: 201,
+    message: "Size chart created successfully",
+    data: newSizeChart,
+  });
 });
 
 // Delete template
@@ -4680,13 +4680,13 @@ export const uploadImageToStrapi = asyncHandler(async (req, res) => {
       }
     };
 
-    const user =await User.findById(req.user.id);
+    const user = await User.findById(req.user.id);
     const dgPostData = {
       title,
       comment,
-      postStatus:'pending',
-      externalUserId:req.user.id,
-      nicknameSnapshot:user.full_name,
+      postStatus: 'pending',
+      externalUserId: req.user.id,
+      nicknameSnapshot: user.full_name,
       isDeleted: isDeleted === "true" || isDeleted === true,
       image: uploadedImage.url, // Store just the relative path
     };
@@ -4718,65 +4718,65 @@ export const uploadImageToStrapi = asyncHandler(async (req, res) => {
 });
 
 export const getAllDGPosts = asyncHandler(async (req, res) => {
-    try {
-        const response = await axios.get(
-            `${STRAPI_DG_POST_URL}?filters[postStatus][$eq]=approved&populate=*`,
-            {
-                headers: {
-                    Authorization: `Bearer ${STRAPI_TOKEN}`,
-                },
-            },
-        );
+  try {
+    const response = await axios.get(
+      `${STRAPI_DG_POST_URL}?filters[postStatus][$eq]=approved&populate=*`,
+      {
+        headers: {
+          Authorization: `Bearer ${STRAPI_TOKEN}`,
+        },
+      },
+    );
 
-        res.status(200).json({
-            message: "DG posts fetched successfully.",
-            data: response?.data?.data,
-        });
-    } catch (error) {
-        console.error(
-            "Failed to fetch DG posts:",
-            error?.response?.data || error.message,
-        );
-        res.status(500).json({
-            message: "Failed to fetch DG posts from Strapi.",
-            error: error?.message,
-        });
-    }
+    res.status(200).json({
+      message: "DG posts fetched successfully.",
+      data: response?.data?.data,
+    });
+  } catch (error) {
+    console.error(
+      "Failed to fetch DG posts:",
+      error?.response?.data || error.message,
+    );
+    res.status(500).json({
+      message: "Failed to fetch DG posts from Strapi.",
+      error: error?.message,
+    });
+  }
 });
 
 export const getMyPosts = asyncHandler(async (req, res) => {
-    try {
-        
-        const response = await axios.get(
-        `${STRAPI_DG_POST_URL}?filters[externalUserId][$eq]=${req.user.id}&populate=*`,
-        {
-            headers: {
-            Authorization: `Bearer ${STRAPI_TOKEN}`,
-            },
-        }
-        );
+  try {
 
-        res.status(200).json({
-            message: "DG posts fetched successfully.",
-            data: response?.data?.data,
-        });
-    } catch (error) {
-        console.error(
-            "Failed to fetch DG posts:",
-            error?.response?.data || error.message,
-        );
-        res.status(500).json({
-            message: "Failed to fetch DG posts from Strapi.",
-            error: error?.message,
-        });
-    }
+    const response = await axios.get(
+      `${STRAPI_DG_POST_URL}?filters[externalUserId][$eq]=${req.user.id}&populate=*`,
+      {
+        headers: {
+          Authorization: `Bearer ${STRAPI_TOKEN}`,
+        },
+      }
+    );
+
+    res.status(200).json({
+      message: "DG posts fetched successfully.",
+      data: response?.data?.data,
+    });
+  } catch (error) {
+    console.error(
+      "Failed to fetch DG posts:",
+      error?.response?.data || error.message,
+    );
+    res.status(500).json({
+      message: "Failed to fetch DG posts from Strapi.",
+      error: error?.message,
+    });
+  }
 });
 
 
 export const deleteDGPost = asyncHandler(async (req, res) => {
-    
+
   const postId = req.params.id;
-    console.log(postId,'postId')
+  console.log(postId, 'postId')
   if (!postId) {
     return res.status(400).json({
       message: "Post ID is required.",
@@ -4790,14 +4790,14 @@ export const deleteDGPost = asyncHandler(async (req, res) => {
         Authorization: `Bearer ${STRAPI_TOKEN}`,
       },
     });
-// 
+    // 
     const post = fetchResponse?.data?.data;
 
     if (!post) {
       return res.status(404).json({
         message: "Post not found.",
       });
-    }   
+    }
 
     const externalUserId = post?.externalUserId;
     if (externalUserId !== req.user.id) {
@@ -4806,7 +4806,7 @@ export const deleteDGPost = asyncHandler(async (req, res) => {
       });
     }
 
-// Authorized – proceed with deletion
+    // Authorized – proceed with deletion
     const deleteResponse = await axios.delete(`${STRAPI_DG_POST_URL}/${postId}`, {
       headers: {
         Authorization: `Bearer ${STRAPI_TOKEN}`,
@@ -4842,14 +4842,14 @@ export const deleteTechPack = asyncHandler(async (req, res) => {
 
     await TechPack.findByIdAndDelete(id);
     return sendResponse(res, {
-          statusCode: 200,
-          message: "Tech pack deleted successfully",
+      statusCode: 200,
+      message: "Tech pack deleted successfully",
     });
   } catch (error) {
     console.error(error)
     return sendResponse(res, {
-          statusCode: 400,
-          message: "Failed to delete tech pack",
+      statusCode: 400,
+      message: "Failed to delete tech pack",
     });
   }
 });
